@@ -6,8 +6,9 @@ typedef struct Header {
 	uint32_t nextModuleLink;			// Pointer to the next module forming linkedlist (always 0 until runtime)
 	uint32_t previousModuleLink;		// Pointer to the previous module forming a linked list (always 0 until runtime)
 	uint32_t sectionCount;				// Number of sections in the file
-	uint32_t moduleNameOffset;			// Offset into the section table
-	uint32_t moduleNameSize;			// Offset to the module name (can be 0, no name)
+	uint32_t sectionInfoOffset;			// Offset into the section info table
+	uint32_t moduleNameOffset;			// Offset into the model name (can be 0, no name)
+	uint32_t moduleNameSize;			// Size of the model name
 	uint32_t moduleVersion;				// Module version (1, 2, or 3)
 	uint32_t bssSize;					// Size of the BSS section (allocated at runtime, not included in file)
 	uint32_t relocationTableOffset;		// Absolute offset of the relocation table
@@ -23,24 +24,24 @@ typedef struct Header {
 	uint32_t moduleAlignment;			// 32 for 4-byte alignment? (v2, v3 only)
 	uint32_t bssAlignment;				// 32 for 4-byte alignment? (v2, v3 only)
 	uint32_t unknown;					// (v3 only)
-};
+}Header;
 
 typedef struct SectionInfoTable {
 	uint32_t offset;					// Absolute offset of the section (0x1 bit dertmines if executable. AND out bit for correct offset)
 	uint32_t size;						// Size of section
-};
+}SectionInfoTable;
 
 typedef struct ImportTable {
 	uint32_t moduleID;					// Module ID for this import (0 is the main DOL executable)
 	uint32_t relocationsOffset;			// Absolute offset of the relocations for the import, pointing into the relocation table
-};
+}ImportTable;
 
 typedef struct RelocationTable {
 	uint16_t offset;					// Offset of this relocation relative to the offset of the last relocation entry
 	uint8_t relocationType;				// Type of the relocation
 	uint8_t sectionIndex;				// Section index of the symbol being patched to (only used for module patches)
 	uint32_t symbolOffset;				// The section-relative offset of the symbol being patched to
-};
+}RelocationTable;
 
 const uint8_t R_RPC_NONE            = 0;	// Do nothing
 const uint8_t R_RPC_ADDR32          = 1;	// Write the full 32-bit address of the symbol
