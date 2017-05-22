@@ -1,6 +1,23 @@
 #pragma once
 #include <stdint.h>
 
+
+#define R_RPC_NONE              0		// Do nothing
+#define R_RPC_ADDR32            1		// Write the full 32-bit address of the symbol
+#define R_RPC_ADDR24            2		// Write the 24-bit address of the symbol, leave the existing value of the bottom 2 bits intact
+#define R_RPC_ADDR16            3		// Write the 16-bit address of the symbol
+#define R_RPC_ADDR16_LO         4		// Write the low 16 bits of the symbol address
+#define R_RPC_ADDR16_HI         5		// Write the high 16 bits of the symbol address
+#define R_RPC_ADDR16_HA         6		// Write the high 16 bits of the symbol address plus 0x100000
+#define R_RPC_ADDR14            7		// Write the 14-bit address of the symbol, leave the existing value of the bottom 2 bits intact (used for conditional branch instructions)
+#define R_RPC_ADDR14_BRTAKEN    8		// Write the 14-bit address of the symbol, leave the existing value of the bottom 2 bits intact
+#define R_RPC_ADDR14_BRNTAKEN   9		// Write the 14-bit address of the symbol, leave the existing value of the bottom 2 bits intact
+#define R_RPC_REL24             10		// Write a 24-bit offset from the address of this instruction to the address of the symbol (used for branch instructions)
+#define R_RPC_REL14             11		// Write a 14-bit offset from the address of this instruction to the address of the symbol
+#define R_DOLPHIN_NOP           201		// Do nothing (used when the offset from one relocation to the next is larger than 0xFFFF bytes)
+#define R_DOLPHIN_SECTION       202		// Change the current section to SectionIndex and reset the current offset to 0
+#define R_DOLPHIN_END           203		// Marks the end of relocations for this import
+
 typedef struct Header {
 	uint32_t moduleID;					// Unique ID for this module. The main DOL file is module 0 so REL modules start at 1
 	uint32_t nextModuleLink;			// Pointer to the next module forming linkedlist (always 0 until runtime)
@@ -43,18 +60,3 @@ typedef struct RelocationTable {
 	uint32_t symbolOffset;				// The section-relative offset of the symbol being patched to
 }RelocationTable;
 
-const uint8_t R_RPC_NONE            = 0;	// Do nothing
-const uint8_t R_RPC_ADDR32          = 1;	// Write the full 32-bit address of the symbol
-const uint8_t R_RPC_ADDR24          = 2;	// Write the 24-bit address of the symbol, leave the existing value of the bottom 2 bits intact
-const uint8_t R_RPC_ADDR16          = 3;	// Write the 16-bit address of the symbol
-const uint8_t R_RPC_ADDR16_LO       = 4;	// Write the low 16 bits of the symbol address
-const uint8_t R_RPC_ADDR16_HI       = 5;	// Write the high 16 bits of the symbol address
-const uint8_t R_RPC_ADDR16_HA       = 6;	// Write the high 16 bits of the symbol address plus 0x100000
-const uint8_t R_RPC_ADDR14          = 7;	// Write the 14-bit address of the symbol, leave the existing value of the bottom 2 bits intact (used for conditional branch instructions)
-const uint8_t R_RPC_ADDR14_BRTAKEN  = 8;	// Write the 14-bit address of the symbol, leave the existing value of the bottom 2 bits intact
-const uint8_t R_RPC_ADDR14_BRNTAKEN = 9;	// Write the 14-bit address of the symbol, leave the existing value of the bottom 2 bits intact
-const uint8_t R_RPC_REL24           = 10;	// Write a 24-bit offset from the address of this instruction to the address of the symbol (used for branch instructions)
-const uint8_t R_RPC_REL14           = 11;	// Write a 14-bit offset from the address of this instruction to the address of the symbol
-const uint8_t R_DOLPHIN_NOP         = 201;	// Do nothing (used when the offset from one relocation to the next is larger than 0xFFFF bytes)
-const uint8_t R_DOLPHIN_SECTION     = 202;	// Change the current section to SectionIndex and reset the current offset to 0
-const uint8_t R_DOLPHIN_END         = 203;	// Marks the end of relocations for this import

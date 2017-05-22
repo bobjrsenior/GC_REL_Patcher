@@ -19,7 +19,6 @@ int main(int argc, char *argv[]) {
 				argv[i][length - 3] == 'r' &&
 				argv[i][length - 2] == 'e' &&
 				argv[i][length - 1] == 'l') {
-				printf("Good");
 				validRel = 1;
 				findPointer(argv[i], 0x0020B448, 0x20);
 			}
@@ -42,6 +41,32 @@ void findPointer(const char *filename, uint32_t offset, uint32_t tolerance) {
 	ImportTable *importTable = malloc(fileHeader.importTableSize);
 	uint32_t importTableCount = fileHeader.importTableSize >> 3;
 	parseImportTable(file, importTable, fileHeader.importTableOffset, importTableCount);
+
+	// Start relocation
+	for (int i = 1; i < importTableCount; i++) {\
+		// Make sure it has an offset and ignore relocations for other modules for now?
+		if (importTable[i].relocationsOffset != 0 && importTable[i].moduleID == fileHeader.moduleID) {
+			fseek(file, importTable[i].relocationsOffset, SEEK_SET);
+			int continueRelocating = 1;
+			while (continueRelocating) {
+				RelocationTable relocationTable;
+				relocationTable.offset = readBigShort(file);
+				relocationTable.relocationType = readBigByte(file);
+				relocationTable.sectionIndex = readBigByte(file);
+				relocationTable.symbolOffset = readBigInt(file);
+
+				switch (relocationTable.relocationType) {
+				case R_DOLPHIN_END:
+					continueRelocating = 0;
+					break;
+				default:
+					break;
+				}
+			}
+
+			
+		}
+	}
 
 	int x = 5;
 
@@ -89,6 +114,11 @@ void parseSectionInfoTable(FILE* file, SectionInfoTable *sectionInfoTable, uint3
 	for (uint32_t i = 0; i < sectionCount; i++) {
 		sectionInfoTable[i].offset		= readBigInt(file);
 		sectionInfoTable[i].size		= readBigInt(file);
+		uint32_t offset = sectionInfoTable[i].offset & ((~0) ^ 0x1);
+		if (offset <= 0x0020B448 && offset + sectionInfoTable[i].size > 0x0020B448) {
+			printf("OFFSET: %d\n", offset);
+			int x = 5;
+		}
 	}
 
 	// Return the the previous file position
@@ -103,7 +133,6 @@ void parseImportTable(FILE* file, ImportTable *importTable, uint32_t importTable
 	for (uint32_t i = 0; i < importTableCount; i++) {
 		importTable[i].moduleID				= readBigInt(file);
 		importTable[i].relocationsOffset	= readBigInt(file);
-
 	}
 
 	// Return the the previous file position
