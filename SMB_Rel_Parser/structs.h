@@ -1,5 +1,6 @@
 #pragma once
-#include <stdint.h>
+#include <cstdint>
+namespace RELPatch {
 
 #define R_RPC_NONE              0		// Do nothing
 #define R_RPC_ADDR32            1		// Write the full 32-bit address of the symbol
@@ -17,48 +18,49 @@
 #define R_DOLPHIN_SECTION       202		// Change the current section to SectionIndex and reset the current offset to 0
 #define R_DOLPHIN_END           203		// Marks the end of relocations for this import
 
-typedef struct RELHeader {
-	uint32_t moduleID;					// Unique ID for this module. The main DOL file is module 0 so REL modules start at 1
-	uint32_t nextModuleLink;			// Pointer to the next module forming linkedlist (always 0 until runtime)
-	uint32_t previousModuleLink;		// Pointer to the previous module forming a linked list (always 0 until runtime)
-	uint32_t sectionCount;				// Number of sections in the file
-	uint32_t sectionInfoOffset;			// Offset into the section info table
-	uint32_t moduleNameOffset;			// Offset into the model name (can be 0, no name)
-	uint32_t moduleNameSize;			// Size of the model name
-	uint32_t moduleVersion;				// Module version (1, 2, or 3)
-	uint32_t bssSize;					// Size of the BSS section (allocated at runtime, not included in file)
-	uint32_t relocationTableOffset;		// Absolute offset of the relocation table
-	uint32_t importTableOffset;			// Absolute offset of the import table
-	uint32_t importTableSize;			// Size of the import table
-	uint8_t prologSection;				// Section index of the prolog function (called when the module is linked, 0 if no prolog function)
-	uint8_t epilogSection;				// Section index of the epilog funtion (called when the modeule is unlinked, 0 if no epilog function)
-	uint8_t unresolvedSection;			// Section index of the unresovled function (called when the module attempts to call an unlinked function, 0 if no unresolved function)
-	uint8_t padding;					// Padding (for 4-byte alignment)
-	uint32_t prologFunctionOffset;		// Section-relative offset of the prolog function (0 if no prolog function, converted to function pointer at runtime by OSLink)
-	uint32_t epilogFunctionOffset;		// Section-relative offset of the epilog function (0 if no prolog function, converted to function pointer at runtime by OSLink)
-	uint32_t unresolvedFunctionOffset;	// Section-relative offset of the unresolved function (0 if no prolog function, converted to function pointer at runtime by OSLink)
-	uint32_t moduleAlignment;			// 32 for 4-byte alignment? (v2, v3 only)
-	uint32_t bssAlignment;				// 32 for 4-byte alignment? (v2, v3 only)
-	uint32_t unknown;					// (v3 only)
+	typedef struct RELHeader {
+		uint32_t moduleID;					// Unique ID for this module. The main DOL file is module 0 so REL modules start at 1
+		uint32_t nextModuleLink;			// Pointer to the next module forming linkedlist (always 0 until runtime)
+		uint32_t previousModuleLink;		// Pointer to the previous module forming a linked list (always 0 until runtime)
+		uint32_t sectionCount;				// Number of sections in the file
+		uint32_t sectionInfoOffset;			// Offset into the section info table
+		uint32_t moduleNameOffset;			// Offset into the model name (can be 0, no name)
+		uint32_t moduleNameSize;			// Size of the model name
+		uint32_t moduleVersion;				// Module version (1, 2, or 3)
+		uint32_t bssSize;					// Size of the BSS section (allocated at runtime, not included in file)
+		uint32_t relocationTableOffset;		// Absolute offset of the relocation table
+		uint32_t importTableOffset;			// Absolute offset of the import table
+		uint32_t importTableSize;			// Size of the import table
+		uint8_t prologSection;				// Section index of the prolog function (called when the module is linked, 0 if no prolog function)
+		uint8_t epilogSection;				// Section index of the epilog funtion (called when the modeule is unlinked, 0 if no epilog function)
+		uint8_t unresolvedSection;			// Section index of the unresovled function (called when the module attempts to call an unlinked function, 0 if no unresolved function)
+		uint8_t padding;					// Padding (for 4-byte alignment)
+		uint32_t prologFunctionOffset;		// Section-relative offset of the prolog function (0 if no prolog function, converted to function pointer at runtime by OSLink)
+		uint32_t epilogFunctionOffset;		// Section-relative offset of the epilog function (0 if no prolog function, converted to function pointer at runtime by OSLink)
+		uint32_t unresolvedFunctionOffset;	// Section-relative offset of the unresolved function (0 if no prolog function, converted to function pointer at runtime by OSLink)
+		uint32_t moduleAlignment;			// 32 for 4-byte alignment? (v2, v3 only)
+		uint32_t bssAlignment;				// 32 for 4-byte alignment? (v2, v3 only)
+		uint32_t unknown;					// (v3 only)
 
-	//Not in the actual specs
-	uint32_t importTableCount;			// Number of entries in the import table
-}RELHeader;
+		//Not in the actual specs
+		uint32_t importTableCount;			// Number of entries in the import table
+	}RELHeader;
 
-typedef struct RELSectionInfoTable {
-	uint32_t offset;					// Absolute offset of the section (0x1 bit dertmines if executable. AND out bit for correct offset)
-	uint32_t size;						// Size of section
-}RELSectionInfoTable;
+	typedef struct RELSectionInfoTable {
+		uint32_t offset;					// Absolute offset of the section (0x1 bit dertmines if executable. AND out bit for correct offset)
+		uint32_t size;						// Size of section
+	}RELSectionInfoTable;
 
-typedef struct RELImportTable {
-	uint32_t moduleID;					// Module ID for this import (0 is the main DOL executable)
-	uint32_t relocationsOffset;			// Absolute offset of the relocations for the import, pointing into the relocation table
-}RELImportTable;
+	typedef struct RELImportTable {
+		uint32_t moduleID;					// Module ID for this import (0 is the main DOL executable)
+		uint32_t relocationsOffset;			// Absolute offset of the relocations for the import, pointing into the relocation table
+	}RELImportTable;
 
-typedef struct RELRelocationTable {
-	uint16_t offset;					// Offset of this relocation relative to the offset of the last relocation entry
-	uint8_t relocationType;				// Type of the relocation
-	uint8_t sectionIndex;				// Section index of the symbol being patched to (only used for module patches)
-	uint32_t symbolOffset;				// The section-relative offset of the symbol being patched to
-}RELRelocationTable;
+	typedef struct RELRelocationTable {
+		uint16_t offset;					// Offset of this relocation relative to the offset of the last relocation entry
+		uint8_t relocationType;				// Type of the relocation
+		uint8_t sectionIndex;				// Section index of the symbol being patched to (only used for module patches)
+		uint32_t symbolOffset;				// The section-relative offset of the symbol being patched to
+	}RELRelocationTable;
 
+}
