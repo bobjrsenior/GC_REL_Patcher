@@ -21,10 +21,6 @@ namespace RELPatch {
 		return (uint8_t)fileStream.get();
 	}
 
-	inline uint8_t readLittleByte(FILE *file) {
-		return (uint8_t)getc(file);
-	}
-
 	inline void writeBigInt(std::ofstream fileStream, uint32_t value) {
 		char bytes[4];
 		bytes[0] = (value >> 24);
@@ -41,5 +37,9 @@ namespace RELPatch {
 		bytes[3] = (value);
 
 		fileStream.write(bytes, 2);
+	}
+
+	inline void writeBigByte(std::ofstream fileStream, uint8_t value) {
+		fileStream.put((char)value);
 	}
 }
