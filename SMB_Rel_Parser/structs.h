@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 namespace RELPatch {
-
+/* Temporary commented out. If used, make an enum, not a #define
 #define R_RPC_NONE              0		// Do nothing
 #define R_RPC_ADDR32            1		// Write the full 32-bit address of the symbol
 #define R_RPC_ADDR24            2		// Write the 24-bit address of the symbol, leave the existing value of the bottom 2 bits intact
@@ -17,8 +17,8 @@ namespace RELPatch {
 #define R_DOLPHIN_NOP           201		// Do nothing (used when the offset from one relocation to the next is larger than 0xFFFF bytes)
 #define R_DOLPHIN_SECTION       202		// Change the current section to SectionIndex and reset the current offset to 0
 #define R_DOLPHIN_END           203		// Marks the end of relocations for this import
-
-	typedef struct RELHeader {
+*/
+	typedef struct Header {
 		uint32_t moduleID;					// Unique ID for this module. The main DOL file is module 0 so REL modules start at 1
 		uint32_t nextModuleLink;			// Pointer to the next module forming linkedlist (always 0 until runtime)
 		uint32_t previousModuleLink;		// Pointer to the previous module forming a linked list (always 0 until runtime)
@@ -44,23 +44,23 @@ namespace RELPatch {
 
 		//Not in the actual specs
 		uint32_t importTableCount;			// Number of entries in the import table
-	}RELHeader;
+	}Header;
 
-	typedef struct RELSectionInfoTable {
+	typedef struct SectionInfoTable {
 		uint32_t offset;					// Absolute offset of the section (0x1 bit dertmines if executable. AND out bit for correct offset)
 		uint32_t size;						// Size of section
-	}RELSectionInfoTable;
+	}SectionInfoTable;
 
-	typedef struct RELImportTable {
+	typedef struct ImportTable {
 		uint32_t moduleID;					// Module ID for this import (0 is the main DOL executable)
 		uint32_t relocationsOffset;			// Absolute offset of the relocations for the import, pointing into the relocation table
-	}RELImportTable;
+	}ImportTable;
 
-	typedef struct RELRelocationTable {
+	typedef struct RelocationTable {
 		uint16_t offset;					// Offset of this relocation relative to the offset of the last relocation entry
 		uint8_t relocationType;				// Type of the relocation
 		uint8_t sectionIndex;				// Section index of the symbol being patched to (only used for module patches)
 		uint32_t symbolOffset;				// The section-relative offset of the symbol being patched to
-	}RELRelocationTable;
+	}RelocationTable;
 
 }

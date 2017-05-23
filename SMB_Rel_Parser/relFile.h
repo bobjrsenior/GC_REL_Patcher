@@ -1,4 +1,6 @@
 #pragma once
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include "structs.h"
 #include "fileFunctions.h"
@@ -10,87 +12,94 @@ namespace RELPatch {
 	public:
 
 	private:
-		std::unique_ptr<RELHeader> header;
-		std::unique_ptr<RELSectionInfoTable[]> sectionInfoTable;
-		std::unique_ptr<RELImportTable[]> importTable;
-		FILE *relFile;
+		std::unique_ptr<Header> header;
+		std::unique_ptr<SectionInfoTable[]> sectionInfoTable;
+		std::unique_ptr<ImportTable[]> importTable;
+		std::ofstream relFile;
 
 	public:
 		RELFile(char *filename) {
-			relFile = fopen(filename, "rb");
-			if (relFile != NULL) {
-				parseRel();
+			std::ifstream relInputFile(filename, std::ios::binary | std::ios::in);
+			if (relInputFile.is_open()) {
+				parseRel(relInputFile);
+				relInputFile.close();
+				relFile.open(filename, std::ios::binary | std::ios::in);
 			}
+			
 		}
 
 		RELFile(std::string filename) {
-			relFile = fopen(filename.c_str(), "rb");
-			if (relFile != NULL) {
-				parseRel();
+			std::ifstream relInputFile(filename, std::ios::binary | std::ios::in);
+			if (relInputFile.is_open()) {
+				parseRel(relInputFile);
+				relInputFile.close();
+				relFile.open(filename, std::ios::binary | std::ios::in);
 			}
 		}
 
 		~RELFile() {
-			if (relFile != NULL) {
-				fclose(relFile);
-				relFile = NULL;
+			if (relFile.is_open()) {
+				relFile.close();
 			}
 		}
 
+
+
 	private:
-		void parseRel() {
-			parseHeader();
+		void parseRel(std::ifstream &relInputFile) {
+			parseHeader(relInputFile);
 
-			parseSectionInfoTable();
+			parseSectionInfoTable(relInputFile);
 
-			parseImportTable();
+			parseImportTable(relInputFile);
 		}
 
-		void parseHeader() {
+		void parseHeader(std::ifstream &relInputFile) {
 			// Save the current position and go to the beginning of the file
-			uint32_t savePos = ftell(relFile);
-			fseek(relFile, 0, SEEK_SET);
+			uint32_t savePos = relInputFile.tellg();
+			relInputFile.seekg(0, std::ifstream::_Seekbeg);
 
-			header = std::make_unique<RELHeader>();
-			header->moduleID = readBigInt(relFile);
-			header->nextModuleLink = readBigInt(relFile);
-			header->previousModuleLink = readBigInt(relFile);
-			header->sectionCount = readBigInt(relFile);
-			header->sectionInfoOffset = readBigInt(relFile);
-			header->moduleNameOffset = readBigInt(relFile);
-			header->moduleNameSize = readBigInt(relFile);
-			header->moduleVersion = readBigInt(relFile);
-			header->bssSize = readBigInt(relFile);
-			header->relocationTableOffset = readBigInt(relFile);
-			header->importTableOffset = readBigInt(relFile);
-			header->importTableSize = readBigInt(relFile);
-			header->prologSection = readBigByte(relFile);
-			header->epilogSection = readBigByte(relFile);
-			header->unresolvedSection = readBigByte(relFile);
-			header->padding = readBigByte(relFile);
-			header->prologFunctionOffset = readBigInt(relFile);
-			header->epilogFunctionOffset = readBigInt(relFile);
-			header->unresolvedFunctionOffset = readBigInt(relFile);
-			header->moduleAlignment = readBigInt(relFile);
-			header->bssAlignment = readBigInt(relFile);
-			header->unknown = readBigInt(relFile);
+			readBigInt(relInputFile);
+			header = std::make_unique<Header>();
+			header->moduleID = readBigInt(relInputFile);
+			header->nextModuleLink = readBigInt(relInputFile);
+			header->previousModuleLink = readBigInt(relInputFile);
+			header->sectionCount = readBigInt(relInputFile);
+			header->sectionInfoOffset = readBigInt(relInputFile);
+			header->moduleNameOffset = readBigInt(relInputFile);
+			header->moduleNameSize = readBigInt(relInputFile);
+			header->moduleVersion = readBigInt(relInputFile);
+			header->bssSize = readBigInt(relInputFile);
+			header->relocationTableOffset = readBigInt(relInputFile);
+			header->importTableOffset = readBigInt(relInputFile);
+			header->importTableSize = readBigInt(relInputFile);
+			header->prologSection = readBigByte(relInputFile);
+			header->epilogSection = readBigByte(relInputFile);
+			header->unresolvedSection = readBigByte(relInputFile);
+			header->padding = readBigByte(relInputFile);
+			header->prologFunctionOffset = readBigInt(relInputFile);
+			header->epilogFunctionOffset = readBigInt(relInputFile);
+			header->unresolvedFunctionOffset = readBigInt(relInputFile);
+			header->moduleAlignment = readBigInt(relInputFile);
+			header->bssAlignment = readBigInt(relInputFile);
+			header->unknown = readBigInt(relInputFile);
 
 			header->importTableCount = header->importTableSize >> 3;
 
 			// Return the the previous file position
-			fseek(relFile, savePos, SEEK_SET);
+			relInputFile.seekg(savePos, std::ifstream::_Seekbeg);
 		}
 
-		void parseSectionInfoTable() {
+		void parseSectionInfoTable(std::ifstream &relInputFile) {
 			// Save the current position and go to the beginning of the file
-			uint32_t savePos = ftell(relFile);
-			fseek(relFile, header->sectionInfoOffset, SEEK_SET);
+			uint32_t savePos = relInputFile.tellg();
+			relInputFile.seekg(0, std::ifstream::_Seekbeg);
 
-			sectionInfoTable = std::make_unique<RELSectionInfoTable[]>(header->sectionCount);
+			sectionInfoTable = std::make_unique<SectionInfoTable[]>(header->sectionCount);
 
 			for (uint32_t i = 0; i < header->sectionCount; i++) {
-				sectionInfoTable[i].offset = readBigInt(relFile);
-				sectionInfoTable[i].size = readBigInt(relFile);
+				sectionInfoTable[i].offset = readBigInt(relInputFile);
+				sectionInfoTable[i].size = readBigInt(relInputFile);
 				uint32_t offset = sectionInfoTable[i].offset & ((~0) ^ 0x1);
 				if (offset <= 0x0020B448 && offset + sectionInfoTable[i].size > 0x0020B448) {
 					printf("OFFSET: %d\n", offset);
@@ -99,23 +108,23 @@ namespace RELPatch {
 			}
 
 			// Return the the previous file position
-			fseek(relFile, savePos, SEEK_SET);
+			relInputFile.seekg(savePos, std::ifstream::_Seekbeg);
 		}
 
-		void parseImportTable() {
+		void parseImportTable(std::ifstream &relInputFile) {
 			// Save the current position and go to the beginning of the file
-			uint32_t savePos = ftell(relFile);
-			fseek(relFile, header->importTableCount, SEEK_SET);
+			uint32_t savePos = relInputFile.tellg();
+			relInputFile.seekg(0, std::ifstream::_Seekbeg);
 
-			importTable = std::make_unique<RELImportTable[]>(header->importTableCount);
+			importTable = std::make_unique<ImportTable[]>(header->importTableCount);
 
 			for (uint32_t i = 0; i < header->importTableCount; i++) {
-				importTable[i].moduleID = readBigInt(relFile);
-				importTable[i].relocationsOffset = readBigInt(relFile);
+				importTable[i].moduleID = readBigInt(relInputFile);
+				importTable[i].relocationsOffset = readBigInt(relInputFile);
 			}
 
 			// Return the the previous file position
-			fseek(relFile, savePos, SEEK_SET);
+			relInputFile.seekg(savePos, std::ifstream::_Seekbeg);
 		}
 	};
 }
