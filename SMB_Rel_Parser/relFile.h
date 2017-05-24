@@ -39,21 +39,21 @@ namespace RELPatch {
 		}
 
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint32_t value) {
-			if (sectionID >= 0 && sectionID < header->sectionCount) {
+			if (validSection(sectionID)) {
 				relFile.seekg(toAddress(sectionInfoTable[sectionID].offset, offset), std::fstream::beg);
 				writeBigInt(relFile, value);
 			}
 		}
 
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint16_t value) {
-			if (sectionID >= 0 && sectionID < header->sectionCount) {
+			if (validSection(sectionID)) {
 				relFile.seekg(toAddress(sectionInfoTable[sectionID].offset, offset), std::fstream::beg);
 				writeBigShort(relFile, value);
 			}
 		}
 
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint8_t value) {
-			if (sectionID >= 0 && sectionID < header->sectionCount) {
+			if (validSection(sectionID)) {
 				relFile.seekg(toAddress(sectionInfoTable[sectionID].offset, offset), std::fstream::beg);
 				writeBigByte(relFile, value);
 			}
@@ -61,12 +61,20 @@ namespace RELPatch {
 
 
 	private:
+
 		uint32_t toAddress(uint32_t raw) {
 			return raw & ((~0) ^ 0x1);
 		}
 
 		std::streamoff toAddress(uint32_t raw, uint32_t offset) {
 			return (std::streamoff) ((raw & ((~0) ^ 0x1)) + offset);
+		}
+
+		bool validSection(uint32_t sectionID) {
+			if (sectionID >= 0 && sectionID < header->sectionCount && sectionInfoTable[sectionID].offset != 0) {
+				return true;
+			}
+			return false;
 		}
 
 		void parseRel() {
