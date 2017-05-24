@@ -21,9 +21,9 @@ Write n-bytes to the specified section at the specified offset
 
 Write n-byte values count times to the specified section at the specified offset
     
-    writeToSection(uint32_t sectionID, uint32_t offset, uint32_t *values, uint32_t count) // Unimplemented
-    writeToSection(uint32_t sectionID, uint32_t offset, uint16_t *values, uint32_t count) // Unimplemented
-    writeToSection(uint32_t sectionID, uint32_t offset, uint8_t *values, uint32_t count) // Unimplemented
+    writeToSection(uint32_t sectionID, uint32_t offset, uint32_t *values, uint32_t count) // Implemented
+    writeToSection(uint32_t sectionID, uint32_t offset, uint16_t *values, uint32_t count) // Implemented
+    writeToSection(uint32_t sectionID, uint32_t offset, uint8_t *values, uint32_t count) // Implemented
 
 May not be added
 
