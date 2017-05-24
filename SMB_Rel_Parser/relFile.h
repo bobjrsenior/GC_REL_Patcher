@@ -45,6 +45,20 @@ namespace RELPatch {
 			}
 		}
 
+		void writeToSection(uint32_t sectionID, uint32_t offset, uint16_t value) {
+			if (sectionID >= 0 && sectionID < header->sectionCount) {
+				relFile.seekg(toAddress(sectionInfoTable[sectionID].offset, offset), std::fstream::beg);
+				writeBigShort(relFile, value);
+			}
+		}
+
+		void writeToSection(uint32_t sectionID, uint32_t offset, uint8_t value) {
+			if (sectionID >= 0 && sectionID < header->sectionCount) {
+				relFile.seekg(toAddress(sectionInfoTable[sectionID].offset, offset), std::fstream::beg);
+				writeBigByte(relFile, value);
+			}
+		}
+
 
 	private:
 		uint32_t toAddress(uint32_t raw) {

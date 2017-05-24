@@ -35,8 +35,8 @@ namespace RELPatch {
 
 	inline void writeBigShort(std::fstream &fileStream, uint16_t value) {
 		unsigned char bytes[2];
-		bytes[2] = (unsigned char)(value >> 8);
-		bytes[3] = (unsigned char)(value);
+		bytes[0] = (unsigned char)(value >> 8);
+		bytes[1] = (unsigned char)(value);
 
 		fileStream.write((char*)bytes, 2);
 	}

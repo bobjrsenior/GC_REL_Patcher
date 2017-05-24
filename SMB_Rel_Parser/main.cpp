@@ -22,5 +22,9 @@ int main(int argc, char *argv[]) {
 	RELPatch::RELFile relFile("mkb2.main_loop.rel");
 
 	relFile.writeToSection(1, 32, 0xDEADBEEF);
+
+	relFile.writeToSection(1, 36, (uint16_t) 0xDEAD);
+
+	relFile.writeToSection(1, 38, (uint8_t)0xBE);
 }
 
