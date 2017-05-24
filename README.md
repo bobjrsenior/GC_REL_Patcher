@@ -15,7 +15,7 @@ Resize a section. If the filesize needs to grow, the default seek data will be l
     
 Write n-bytes to the specified section at the specified offset
     
-    writeToSection(uint32_t sectionID, uint32_t offset, uint32_t value) // Unimplemented
+    writeToSection(uint32_t sectionID, uint32_t offset, uint32_t value) // Implemented
     writeToSection(uint32_t sectionID, uint32_t offset, uint16_t value) // Unimplemented
     writeToSection(uint32_t sectionID, uint32_t offset, uint8_t value) // Unimplemented
 

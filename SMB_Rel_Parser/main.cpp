@@ -6,7 +6,7 @@
 
 
 int main(int argc, char *argv[]) {
-	for (int i = 1; i < argc; i++) {
+	/*for (int i = 1; i < argc; i++) {
 		int length = strlen(argv[i]);
 		int validRel = 0;
 		if (length > 4) {
@@ -15,9 +15,12 @@ int main(int argc, char *argv[]) {
 				argv[i][length - 2] == 'e' &&
 				argv[i][length - 1] == 'l') {
 				validRel = 1;
-				//parseRel(argv[i]);
+				RELPatch::RELFile relFile(argv[i]);
 			}
 		}
-	}
+	}*/
+	RELPatch::RELFile relFile("mkb2.main_loop.rel");
+
+	relFile.writeToSection(1, 32, 0xDEADBEEF);
 }
 
