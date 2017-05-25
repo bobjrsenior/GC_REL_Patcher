@@ -234,7 +234,7 @@ namespace RELPatch {
 			This is done by zeroing out the least significant bit (the executable bit).
 		*/
 		uint32_t toAddress(uint32_t raw) {
-			return raw & ((~0) ^ 0x1);
+			return raw & (~1);
 		}
 
 		/*
@@ -242,7 +242,7 @@ namespace RELPatch {
 			This is done by zeroing out the least significant bit (the executable bit) and adding the <offset>.
 		*/
 		std::streamoff toAddress(uint32_t raw, uint32_t offset) {
-			return (std::streamoff) ((raw & ((~0) ^ 0x1)) + offset);
+			return (std::streamoff) ((raw & (~1)) + offset);
 		}
 
 		/*
