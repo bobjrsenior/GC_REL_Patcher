@@ -274,7 +274,7 @@ namespace RELPatch {
 		}
 
 		/*
-		Write a series of <count> 2-byte <values> to the rel file at the specified <offset>.
+			Write a series of <count> 2-byte <values> to the rel file at the specified <offset>.
 		*/
 		void write(std::streamoff offset, uint16_t *values, int32_t count) {
 			relFile.seekg(offset, std::fstream::beg);
@@ -284,7 +284,7 @@ namespace RELPatch {
 		}
 
 		/*
-		Write a series of <count> 1-byte <values> to the rel file at the specified <offset>.
+			Write a series of <count> 1-byte <values> to the rel file at the specified <offset>.
 		*/
 		void write(std::streamoff offset, uint8_t *values, int32_t count) {
 			relFile.seekg(offset, std::fstream::beg);
