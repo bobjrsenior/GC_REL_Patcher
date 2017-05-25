@@ -7,11 +7,17 @@ Finish api functions, write inline documentation, determine any other api functi
 
 ## API (Early/In progress)
 
+**Global Functions**
+
+Get the current filesize
+
+    filesize(); // Implmented
+
 **Section Functions**
 
 Move a section to the end of the rel file
 
-    moveSectionToEnd(uint32_t sectionID) // Unimplemented
+    moveSectionToEnd(uint32_t sectionID) // Implemented
 
 Resize a section. If the filesize needs to grow, the default seek data will be left. If the filsize doesn't need to grow, the existing data is used
 

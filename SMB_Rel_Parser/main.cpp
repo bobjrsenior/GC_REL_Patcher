@@ -20,13 +20,13 @@ int main(int argc, char *argv[]) {
 		}
 	}*/
 	RELPatch::RELFile relFile("mkb2.main_loop.rel");
-
+	
+	// Write single value to section
 	relFile.writeToSection(1, 32, 0xDEADBEEF);
-
 	relFile.writeToSection(1, 36, (uint16_t) 0xDEAD);
-
 	relFile.writeToSection(1, 38, (uint8_t)0xBE);
 
+	// Section ID checks
 	relFile.writeToSection(0, 32, 0xDEADBEEF);
 	relFile.writeToSection((uint32_t) -1, 32, 0xDEADBEEF);
 	relFile.writeToSection(99999, 32, 0xDEADBEEF);
@@ -35,19 +35,24 @@ int main(int argc, char *argv[]) {
 	uint16_t uint16Arr[5] = { 0xDEAD , 0xDEAD , 0xDEAD , 0xDEAD, 0xDEAD };
 	uint8_t uint8Arr[5] = { 0xDE , 0xDE , 0xDE , 0xDE, 0xDE };
 
+	// Write multiple values to section
 	relFile.writeToSection(1, 44, uint32Arr, 5);
-	
 	relFile.writeToSection(1, 72, uint16Arr, 5);
-	
 	relFile.writeToSection(1, 86, uint8Arr, 5);
 
-
+	// Write single value to relocations
 	relFile.writeToRelocations(32, 0xDEADBEEF);
 	relFile.writeToRelocations(36, (uint16_t)0xDEAD);
 	relFile.writeToRelocations(38, (uint8_t)0xDE);
 
+	// Write multiple values to relocations
 	relFile.writeToRelocations(44, uint32Arr, 5);
 	relFile.writeToRelocations(72, uint16Arr, 5);
 	relFile.writeToRelocations(86, uint8Arr, 5);
+	
+	// Move a section to the back
+	relFile.moveSectionToEnd(1);
+
+	return 0;
 }
 

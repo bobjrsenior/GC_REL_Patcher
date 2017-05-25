@@ -38,6 +38,24 @@ namespace RELPatch {
 			}
 		}
 
+		std::streamoff filesize() {
+			// Save the current position and go to the beginning of the file
+			std::streamoff savePos = relFile.tellg();
+			relFile.seekg(0, std::fstream::end);
+			
+			std::streamoff filesize = relFile.tellg();
+			// Return the the previous file position
+			relFile.seekg(savePos, std::fstream::beg);
+
+			return filesize;
+		}
+
+		uint8_t isSectionExecutable(uint32_t sectionID) {
+			if (validSection(sectionID)) {
+				return sectionInfoTable[sectionID].offset & 0x1;
+			}
+		}
+
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint32_t value) {
 			if (validSection(sectionID)) {
 				relFile.seekg(toAddress(sectionInfoTable[sectionID].offset, offset), std::fstream::beg);
@@ -74,6 +92,58 @@ namespace RELPatch {
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint8_t *values, int32_t count) {
 			if(validSection(sectionID)) {
 				write(toAddress(sectionInfoTable[sectionID].offset, offset), values, count);
+			}
+		}
+
+		void moveSectionToEnd(uint32_t sectionID) {
+			if (validSection(sectionID)) {
+				// The new section will now be at the current end of the file
+				std::streamoff newSectionOffset = filesize();
+				uint8_t isExecutable = isSectionExecutable(sectionID);
+
+				// Promoted to int64 to avoid unsigned ambiguities
+				int64_t offset = toAddress(sectionInfoTable[sectionID].offset);
+				int64_t bytesLeft = sectionInfoTable[sectionID].size;
+				int64_t bytesWritten = 0;
+				int64_t maxBufferSize = 1 << 14; // 256 KiB
+				int64_t buffserSize;
+				if (bytesLeft < maxBufferSize) {
+					buffserSize = bytesLeft;
+				}
+				else {
+					buffserSize = maxBufferSize;
+				}
+				// Allocate our buffer
+				std::unique_ptr<char[]> buffer = std::make_unique<char[]>((size_t)buffserSize);
+
+				// Loop until nothing is left
+				while (bytesLeft > 0) {
+					relFile.seekg(offset + bytesWritten, std::fstream::beg);
+
+					// Make sure not to read more than there is
+					if (bytesLeft < maxBufferSize) {
+						buffserSize = bytesLeft;
+					}
+					else {
+						buffserSize = maxBufferSize;
+					}
+
+					// Read in the buffer
+					relFile.read(buffer.get(), buffserSize);
+					bytesLeft -= buffserSize;
+
+					// Seek to the end and write out the buffer
+					relFile.seekg(0, std::fstream::end);
+					relFile.write(buffer.get(), buffserSize);
+					bytesWritten += buffserSize;
+				}
+
+				// Update our stored section offset
+				sectionInfoTable[sectionID].offset = toSectionOffsetFormat((uint32_t)newSectionOffset, isExecutable);
+				
+				// Update the rel file's section offset
+				relFile.seekg(header->sectionInfoOffset + (0x8 * sectionID), std::fstream::beg);
+				writeBigInt(relFile, sectionInfoTable[sectionID].offset);
 			}
 		}
 
@@ -114,6 +184,10 @@ namespace RELPatch {
 
 		std::streamoff toAddress(uint32_t raw, uint32_t offset) {
 			return (std::streamoff) ((raw & ((~0) ^ 0x1)) + offset);
+		}
+
+		uint32_t toSectionOffsetFormat(uint32_t offset, uint8_t isExecutable) {
+			return toAddress(offset) | isExecutable;
 		}
 
 		bool validSection(uint32_t sectionID) {
@@ -208,6 +282,7 @@ namespace RELPatch {
 				//	printf("OFFSET: %d\n", offset);
 				//	int x = 5;
 				//}
+				//std::cout << sectionInfoTable[i].size << std::endl;
 			}
 
 			// Return the the previous file position
