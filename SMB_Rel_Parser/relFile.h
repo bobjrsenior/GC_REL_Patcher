@@ -77,6 +77,35 @@ namespace RELPatch {
 			}
 		}
 
+		////////
+
+		void writeToRelocations(uint32_t offset, uint32_t value) {
+			relFile.seekg(toAddress(header->relocationTableOffset, offset), std::fstream::beg);
+			writeBigInt(relFile, value);
+		}
+
+		void writeToRelocations(uint32_t offset, uint16_t value) {
+			relFile.seekg(toAddress(header->relocationTableOffset, offset), std::fstream::beg);
+			writeBigShort(relFile, value);
+		}
+
+		void writeToRelocations(uint32_t offset, uint8_t value) {
+			relFile.seekg(toAddress(header->relocationTableOffset, offset), std::fstream::beg);
+			writeBigByte(relFile, value);
+		}
+
+		void writeToRelocations(uint32_t offset, uint32_t *values, int32_t count) {
+			write(toAddress(header->relocationTableOffset, offset), values, count);
+		}
+
+		void writeToRelocations(uint32_t offset, uint16_t *values, int32_t count) {
+			write(toAddress(header->relocationTableOffset, offset), values, count);
+		}
+
+		void writeToRelocations(uint32_t offset, uint8_t *values, int32_t count) {
+			write(toAddress(header->relocationTableOffset, offset), values, count);
+		}
+
 	private:
 
 		uint32_t toAddress(uint32_t raw) {

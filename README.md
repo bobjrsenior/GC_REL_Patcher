@@ -1,6 +1,10 @@
 # GC REL Patcher
 A tool for generically patching GameCube rel files.
 
+## TODO
+
+Finish api functions, write inline documentation, determine any other api functions needed.
+
 ## API (Early/In progress)
 
 **Section Functions**
@@ -41,12 +45,12 @@ May not be added
 
 Write n-bytes to the specified offset in the relocations section
 
-    writeToRelocations(uint32_t offset, uint32_t value) // Unimplemented
-    writeToRelocations(uint32_t offset, uint16_t value) // Unimplemented
-    writeToRelocations(uint32_t offset, uint8_t value) // Unimplemented
+    writeToRelocations(uint32_t offset, uint32_t value) // Implemented
+    writeToRelocations(uint32_t offset, uint16_t value) // Implemented
+    writeToRelocations(uint32_t offset, uint8_t value) // Implemented
 
 Write n-byte values count times to the specified offset in the relocations section
 
-    writeToRelocations(uint32_t offset, uint32_t *values, uint32_t count) // Unimplemented
-    writeToRelocations(uint32_t offset, uint32_t *values, uint16_t count) // Unimplemented
-    writeToRelocations(uint32_t offset, uint32_t *values, uint8_t count) // Unimplemented
+    writeToRelocations(uint32_t offset, uint32_t *values, uint32_t count) // Implemented
+    writeToRelocations(uint32_t offset, uint32_t *values, uint16_t count) // Implemented
+    writeToRelocations(uint32_t offset, uint32_t *values, uint8_t count) // Implemented

@@ -32,12 +32,22 @@ int main(int argc, char *argv[]) {
 	relFile.writeToSection(99999, 32, 0xDEADBEEF);
 
 	uint32_t uint32Arr[5] = { 0xDEADBEEF , 0xDEADBEEF , 0xDEADBEEF , 0xDEADBEEF, 0xDEADBEEF };
-	relFile.writeToSection(1, 44, uint32Arr, 5);
-
 	uint16_t uint16Arr[5] = { 0xDEAD , 0xDEAD , 0xDEAD , 0xDEAD, 0xDEAD };
-	relFile.writeToSection(1, 72, uint16Arr, 5);
-
 	uint8_t uint8Arr[5] = { 0xDE , 0xDE , 0xDE , 0xDE, 0xDE };
+
+	relFile.writeToSection(1, 44, uint32Arr, 5);
+	
+	relFile.writeToSection(1, 72, uint16Arr, 5);
+	
 	relFile.writeToSection(1, 86, uint8Arr, 5);
+
+
+	relFile.writeToRelocations(32, 0xDEADBEEF);
+	relFile.writeToRelocations(36, (uint16_t)0xDEAD);
+	relFile.writeToRelocations(38, (uint8_t)0xDE);
+
+	relFile.writeToRelocations(44, uint32Arr, 5);
+	relFile.writeToRelocations(72, uint16Arr, 5);
+	relFile.writeToRelocations(86, uint8Arr, 5);
 }
 
