@@ -39,7 +39,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Retreives the current filesize of the rel file.
+			Retreives the current filesize of the rel file
 		*/
 		std::streamoff filesize() {
 			// Save the current position and go to the beginning of the file
@@ -61,7 +61,7 @@ namespace RELPatch {
 			if (validSection(sectionID)) {
 				return sectionInfoTable[sectionID].size;
 			}
-			return -1;
+			return 0xFFFFFFFF;
 		}
 
 		/*
@@ -72,11 +72,11 @@ namespace RELPatch {
 			if (validSection(sectionID)) {
 				return toAddress(sectionInfoTable[sectionID].offset);
 			}
-			return -1;
+			return 0xFFFFFFFF;
 		}
 
 		/*
-			Checks to see if the given <sectionID> is executable.
+			Checks to see if the given <sectionID> is executable
 			Returns 1 if exectutable
 			Returns 0 if not executable
 		*/
@@ -88,7 +88,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a 4-byte <value> to the specified <offset> relative to the  <sectionID>'s offset.
+			Write a 4-byte <value> to the specified <offset> relative to the  <sectionID>'s offset
 		*/
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint32_t value) {
 			if (validSection(sectionID)) {
@@ -98,7 +98,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a 2-byte <value> to the specified <offset> relative to the  <sectionID>'s offset.
+			Write a 2-byte <value> to the specified <offset> relative to the  <sectionID>'s offset
 		*/
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint16_t value) {
 			if (validSection(sectionID)) {
@@ -108,7 +108,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a 1-byte <value> to the specified <offset> relative to the section id's offset.
+			Write a 1-byte <value> to the specified <offset> relative to the section id's offset
 		*/
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint8_t value) {
 			if (validSection(sectionID)) {
@@ -118,7 +118,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a series of <count> 4-byte <values> to the specified <offset> relative to the <sectionID>'s offset.
+			Write a series of <count> 4-byte <values> to the specified <offset> relative to the <sectionID>'s offset
 		*/
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint32_t *values, int32_t count) {
 			if(validSection(sectionID)) {
@@ -127,7 +127,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a series of <count> 2-byte <values> to the specified <offset> relative to the <sectionID>'s offset.
+			Write a series of <count> 2-byte <values> to the specified <offset> relative to the <sectionID>'s offset
 		*/
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint16_t *values, int32_t count) {
 			if (validSection(sectionID)) {
@@ -136,7 +136,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a series of <count> 1-byte <values> to the specified <offset> relative to the <sectionID>'s offset.
+			Write a series of <count> 1-byte <values> to the specified <offset> relative to the <sectionID>'s offset
 		*/
 		void writeToSection(uint32_t sectionID, uint32_t offset, uint8_t *values, int32_t count) {
 			if(validSection(sectionID)) {
@@ -145,9 +145,9 @@ namespace RELPatch {
 		}
 
 		/*
-			Moves the <sectionID>'s section to the back of the file.
-			This will increase the filesize, so be careful about using it multiple times.
-			Especially if it is used multiple times on one <sectionID>.
+			Moves the <sectionID>'s section to the back of the file
+			This will increase the filesize, so be careful about using it multiple times
+			Especially if it is used multiple times on one <sectionID>
 		*/
 		void moveSectionToEnd(uint32_t sectionID) {
 			if (validSection(sectionID)) {
@@ -157,40 +157,8 @@ namespace RELPatch {
 
 				// Promoted to int64 to avoid unsigned ambiguities
 				int64_t offset = toAddress(sectionInfoTable[sectionID].offset);
-				int64_t bytesLeft = sectionInfoTable[sectionID].size;
-				int64_t bytesWritten = 0;
-				int64_t maxBufferSize = 1 << 14; // 256 KiB
-				int64_t buffserSize;
-				if (bytesLeft < maxBufferSize) {
-					buffserSize = bytesLeft;
-				}
-				else {
-					buffserSize = maxBufferSize;
-				}
-				// Allocate our buffer
-				std::unique_ptr<char[]> buffer = std::make_unique<char[]>((size_t)buffserSize);
-
-				// Loop until nothing is left
-				while (bytesLeft > 0) {
-					relFile.seekg(offset + bytesWritten, std::fstream::beg);
-
-					// Make sure not to read more than there is
-					if (bytesLeft < maxBufferSize) {
-						buffserSize = bytesLeft;
-					}
-					else {
-						buffserSize = maxBufferSize;
-					}
-
-					// Read in the buffer
-					relFile.read(buffer.get(), buffserSize);
-					bytesLeft -= buffserSize;
-
-					// Seek to the end and write out the buffer
-					relFile.seekg(0, std::fstream::end);
-					relFile.write(buffer.get(), buffserSize);
-					bytesWritten += buffserSize;
-				}
+				
+				copyData(toAddress(sectionInfoTable[sectionID].offset), (int64_t)newSectionOffset, sectionInfoTable[sectionID].size);
 
 				// Update our stored section offset
 				sectionInfoTable[sectionID].offset = toSectionOffsetFormat((uint32_t)newSectionOffset, isExecutable);
@@ -202,8 +170,8 @@ namespace RELPatch {
 		}
 
 		/*
-			Resizes <sectionID> to <newSize>.
-			No bounds/overlap checks are done.
+			Resizes <sectionID> to <newSize>
+			No bounds/overlap checks are done
 		*/
 		void resizeSectionUnsafe(uint32_t sectionID, uint32_t newSize) {
 			if (validSection(sectionID) && newSize > 0) {
@@ -217,13 +185,32 @@ namespace RELPatch {
 		}
 
 		/*
-			Expands <sectionID> by <amount>.
-			Amount can only be positive (it's unsigned after all).
-			No bounds/overlap checks are done.
+			Expands <sectionID> by <amount>
+			Amount can only be positive (it's unsigned after all)
+			No bounds/overlap checks are done
 		*/
 		void expandSectionUnsafe(uint32_t sectionID, uint32_t amount) {
 			if (validSection(sectionID) && amount > 0) {
 				resizeSectionUnsafe(sectionID, sectionInfoTable[sectionID].size + amount);
+			}
+		}
+
+		/*
+			Copy <amount> number of bytes from <sourceOffset> in <sectionID> to <destinationOffset> in <sectionID>
+		*/
+		void copyData(uint32_t sectionID, uint32_t sourceOffset, uint32_t destinationOffset, uint32_t amount) {
+			copyData(sectionID, sourceOffset, sectionID, destinationOffset, amount);
+		}
+
+		/*
+		Copy <amount> number of bytes from <sourceOffset> in <sourceSectionID> to <destinationOffset> in <destinationSectionID>
+		*/
+		void copyData(uint32_t sourceSectionID, uint32_t sourceOffset, uint32_t destinationSectionID, uint32_t destinationOffset, uint32_t amount) {
+			if (validSection(sourceSectionID) && validSection(destinationOffset)) {
+				int64_t sourceSectionAbsoluteAddress = toAddress(sectionInfoTable[sourceSectionID].offset, sourceOffset);
+				int64_t destinationSectionAbsoluteAddress = toAddress(sectionInfoTable[destinationSectionID].offset, destinationOffset);
+
+				copyData(sourceSectionAbsoluteAddress, destinationSectionAbsoluteAddress, amount);
 			}
 		}
 
@@ -237,7 +224,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a 4-byte <value> to the specified <offset> relative to the start of the relocations.
+			Write a 4-byte <value> to the specified <offset> relative to the start of the relocations
 		*/
 		void writeToRelocations(uint32_t offset, uint32_t value) {
 			relFile.seekg(toAddress(header->relocationTableOffset, offset), std::fstream::beg);
@@ -245,7 +232,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a 2-byte <value> to the specified <offset> relative to the start of the relocations.
+			Write a 2-byte <value> to the specified <offset> relative to the start of the relocations
 		*/
 		void writeToRelocations(uint32_t offset, uint16_t value) {
 			relFile.seekg(toAddress(header->relocationTableOffset, offset), std::fstream::beg);
@@ -253,7 +240,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a 1-byte <value> to the specified <offset> relative to the start of the relocations.
+			Write a 1-byte <value> to the specified <offset> relative to the start of the relocations
 		*/
 		void writeToRelocations(uint32_t offset, uint8_t value) {
 			relFile.seekg(toAddress(header->relocationTableOffset, offset), std::fstream::beg);
@@ -261,21 +248,21 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a series of <count> 4-byte <values> to the specified <offset> relative to the start of the relocations.
+			Write a series of <count> 4-byte <values> to the specified <offset> relative to the start of the relocations
 		*/
 		void writeToRelocations(uint32_t offset, uint32_t *values, int32_t count) {
 			write(toAddress(header->relocationTableOffset, offset), values, count);
 		}
 
 		/*
-			Write a series of <count> 2-byte <values> to the specified <offset> relative to the start of the relocations.
+			Write a series of <count> 2-byte <values> to the specified <offset> relative to the start of the relocations
 		*/
 		void writeToRelocations(uint32_t offset, uint16_t *values, int32_t count) {
 			write(toAddress(header->relocationTableOffset, offset), values, count);
 		}
 
 		/*
-			Write a series of <count> 1-byte <values> to the specified <offset> relative to the start of the relocations.
+			Write a series of <count> 1-byte <values> to the specified <offset> relative to the start of the relocations
 		*/
 		void writeToRelocations(uint32_t offset, uint8_t *values, int32_t count) {
 			write(toAddress(header->relocationTableOffset, offset), values, count);
@@ -284,23 +271,23 @@ namespace RELPatch {
 	private:
 
 		/*
-			Converts a <raw> rel position into an absolute offset.
-			This is done by zeroing out the least significant bit (the executable bit).
+			Converts a <raw> rel position into an absolute offset
+			This is done by zeroing out the least significant bit (the executable bit)
 		*/
 		uint32_t toAddress(uint32_t raw) {
 			return raw & (~1);
 		}
 
 		/*
-			Combines a <raw> rel position with an <offset> into an absolute offset.
-			This is done by zeroing out the least significant bit (the executable bit) and adding the <offset>.
+			Combines a <raw> rel position with an <offset> into an absolute offset
+			This is done by zeroing out the least significant bit (the executable bit) and adding the <offset>
 		*/
 		std::streamoff toAddress(uint32_t raw, uint32_t offset) {
 			return (std::streamoff) ((raw & (~1)) + offset);
 		}
 
 		/*
-			Combines an absolute <offset> and a boolean of if the address <isExecutable> into a raw rel position.
+			Combines an absolute <offset> and a boolean of if the address <isExecutable> into a raw rel position
 		*/
 		uint32_t toSectionOffsetFormat(uint32_t offset, uint8_t isExecutable) {
 			return toAddress(offset) | isExecutable;
@@ -318,7 +305,85 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a series of <count> 4-byte <values> to the rel file at the specified <offset>.
+			Copies <amount> bytes from absolute address <sourceOffset> to absolute address <destinationOffset>
+		*/
+		void copyData(int64_t sourceOffset, int64_t destinationOffset, int64_t amount) {
+			int64_t maxBufferSize = 1 << 17; // 128 KiB
+			int64_t bufferSize;
+			
+			int64_t distance = destinationOffset - sourceOffset;
+			if (distance < maxBufferSize) {
+				// Destination after source and source/destination overlap
+				if(distance > amount){
+					// Make sure we copy data without overlap
+					// At most we can copy distance data at a time (working from the end backwards)
+
+					int64_t tempSourceOffset = sourceOffset + amount - distance;
+					int64_t tempDestinationOffset = destinationOffset + amount - distance;
+					while (tempSourceOffset >= sourceOffset) {
+						copyData(tempSourceOffset, tempDestinationOffset, distance, distance);
+
+						tempSourceOffset -= distance;
+						tempDestinationOffset -= distance;
+					}
+					return;
+				}
+				else {
+					bufferSize = distance;
+				}
+			}
+			else {
+				bufferSize = maxBufferSize;
+
+			}
+			copyData(sourceOffset, destinationOffset, amount, bufferSize);
+		}
+
+
+		/*
+			Copies <amount> bytes from absolute address <sourceOffset> to absolute address <destinationOffset>
+			Copy at most <maxBufferSize> bytes at a time
+		*/
+		void copyData(int64_t sourceOffset, int64_t destinationOffset, int64_t amount, int64_t maxBufferSize) {
+			// Promoted to int64 to avoid unsigned ambiguities
+			int64_t bytesLeft = amount;
+			int64_t bytesWritten = 0;
+			int64_t buffserSize;
+			if (bytesLeft < maxBufferSize) {
+				buffserSize = bytesLeft;
+			}
+			else {
+				buffserSize = maxBufferSize;
+
+			}
+			// Allocate our buffer
+			std::unique_ptr<char[]> buffer = std::make_unique<char[]>((size_t)buffserSize);
+
+			// Loop until nothing is left
+			while (bytesLeft > 0) {
+				relFile.seekg(sourceOffset + bytesWritten, std::fstream::beg);
+
+				// Make sure not to read more than there is
+				if (bytesLeft < maxBufferSize) {
+					buffserSize = bytesLeft;
+				}
+				else {
+					buffserSize = maxBufferSize;
+				}
+
+				// Read in the buffer
+				relFile.read(buffer.get(), buffserSize);
+				bytesLeft -= buffserSize;
+
+				// Seek to the end and write out the buffer
+				relFile.seekg(destinationOffset + bytesWritten, std::fstream::beg);
+				relFile.write(buffer.get(), buffserSize);
+				bytesWritten += buffserSize;
+			}
+		}
+
+		/*
+			Write a series of <count> 4-byte <values> to the rel file at the specified <offset>
 		*/
 		void write(std::streamoff offset, uint32_t *values, int32_t count) {
 			relFile.seekg(offset, std::fstream::beg);
@@ -328,7 +393,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a series of <count> 2-byte <values> to the rel file at the specified <offset>.
+			Write a series of <count> 2-byte <values> to the rel file at the specified <offset>
 		*/
 		void write(std::streamoff offset, uint16_t *values, int32_t count) {
 			relFile.seekg(offset, std::fstream::beg);
@@ -338,7 +403,7 @@ namespace RELPatch {
 		}
 
 		/*
-			Write a series of <count> 1-byte <values> to the rel file at the specified <offset>.
+			Write a series of <count> 1-byte <values> to the rel file at the specified <offset>
 		*/
 		void write(std::streamoff offset, uint8_t *values, int32_t count) {
 			relFile.seekg(offset, std::fstream::beg);

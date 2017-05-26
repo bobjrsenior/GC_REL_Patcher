@@ -30,6 +30,12 @@ Move a section to the end of the rel file
 Resize a section. No bounds or overlap checking is done
 
     resizeSectionUnsafe(uint32_t sectionID, newSize); // Implemented
+    expandSectionUnsafe(uint32_t sectionID, uint32_t amount) // Implemented
+
+Copies data from one location within a section to another
+
+    copyData(uint32_t sectionID, uint32_t sourceOffset, uint32_t destinationOffset, uint32_t amount)
+    copyData(uint32_t sourceSectionID, uint32_t sourceOffset, uint32_t destinationSectionID, uint32_t destinationOffset, uint32_t amount)
     
 Write n-bytes to the specified section at the specified offset
     
