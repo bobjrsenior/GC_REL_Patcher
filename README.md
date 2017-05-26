@@ -15,13 +15,21 @@ Get the current filesize
 
 **Section Functions**
 
+The size of a section in bytes
+    
+    sectionSize(uint32_t sectionID) // Implemented
+
+The absolute offset of a section in bytes
+    
+    sectionOffset(uint32_t sectionID) // Implemented
+
 Move a section to the end of the rel file
 
     moveSectionToEnd(uint32_t sectionID) // Implemented
 
-Resize a section. If the filesize needs to grow, the default seek data will be left. If the filsize doesn't need to grow, the existing data is used
+Resize a section. No bounds or overlap checking is done
 
-    resizeSection(uint32_t sectionID, newSize); Resizes the section to the specified file (truncation/zero padding) // Unimplemented
+    resizeSectionUnsafe(uint32_t sectionID, newSize); // Implemented
     
 Write n-bytes to the specified section at the specified offset
     
@@ -48,6 +56,10 @@ May not be added
 
 
 **Relocation functions**
+
+The absolute offset of the relocations in bytes
+    
+    relocationsOffset(uint32_t sectionID) // Implemented
 
 Write n-bytes to the specified offset in the relocations section
 

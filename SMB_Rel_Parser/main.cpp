@@ -53,6 +53,9 @@ int main(int argc, char *argv[]) {
 	// Move a section to the back
 	relFile.moveSectionToEnd(1);
 
+	// Resize a section
+	relFile.expandSectionUnsafe(1, 1024);
+
 	return 0;
 }
 

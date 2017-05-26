@@ -54,6 +54,28 @@ namespace RELPatch {
 		}
 
 		/*
+			Gets the size of <sectionID>
+			Return -1 on invalid <sectionID>
+		*/
+		uint32_t sectionSize(uint32_t sectionID) {
+			if (validSection(sectionID)) {
+				return sectionInfoTable[sectionID].size;
+			}
+			return -1;
+		}
+
+		/*
+			Gets the offset of <sectionID>
+			Return -1 on invalid <sectionID>
+		*/
+		uint32_t sectionOffset(uint32_t sectionID) {
+			if (validSection(sectionID)) {
+				return toAddress(sectionInfoTable[sectionID].offset);
+			}
+			return -1;
+		}
+
+		/*
 			Checks to see if the given <sectionID> is executable.
 			Returns 1 if exectutable
 			Returns 0 if not executable
@@ -179,8 +201,40 @@ namespace RELPatch {
 			}
 		}
 
+		/*
+			Resizes <sectionID> to <newSize>.
+			No bounds/overlap checks are done.
+		*/
+		void resizeSectionUnsafe(uint32_t sectionID, uint32_t newSize) {
+			if (validSection(sectionID) && newSize > 0) {
+				// Update our stored section offset
+				sectionInfoTable[sectionID].size = newSize;
+
+				// Update the rel file's section offset
+				relFile.seekg(header->sectionInfoOffset + (0x8 * sectionID) + 0x4, std::fstream::beg);
+				writeBigInt(relFile, sectionInfoTable[sectionID].size);
+			}
+		}
+
+		/*
+			Expands <sectionID> by <amount>.
+			Amount can only be positive (it's unsigned after all).
+			No bounds/overlap checks are done.
+		*/
+		void expandSectionUnsafe(uint32_t sectionID, uint32_t amount) {
+			if (validSection(sectionID) && amount > 0) {
+				resizeSectionUnsafe(sectionID, sectionInfoTable[sectionID].size + amount);
+			}
+		}
+
 		////////
 
+		/*
+		Gets the offset of the relocations
+		*/
+		uint32_t relocationsOffset() {
+			return header->relocationTableOffset;
+		}
 
 		/*
 			Write a 4-byte <value> to the specified <offset> relative to the start of the relocations.
