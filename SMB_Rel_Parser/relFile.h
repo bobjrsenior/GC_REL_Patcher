@@ -32,12 +32,6 @@ namespace RELPatch {
 			}
 		}
 
-		~RELFile() {
-			if (relFile.is_open()) {
-				relFile.close();
-			}
-		}
-
 		/*
 			Retreives the current filesize of the rel file
 		*/
