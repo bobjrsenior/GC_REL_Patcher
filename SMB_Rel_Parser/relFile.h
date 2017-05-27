@@ -18,14 +18,14 @@ namespace RELPatch {
 		std::fstream relFile;
 
 	public:
-		RELFile(char *filename) {
+		RELFile(char const*filename) {
 			relFile.open(filename, std::ios::binary | std::ios::in | std::ios::out);
 			if (relFile.is_open()) {
 				parseRel();
 			}
 		}
 
-		RELFile(std::string filename) {
+		RELFile(std::string const& filename) {
 			relFile.open(filename, std::ios::binary | std::ios::in | std::ios::out);
 			if (relFile.is_open()) {
 				parseRel();
@@ -298,7 +298,7 @@ namespace RELPatch {
 			A <sectionID> is valid if it exists in the rel file and has an offset other than 0
 		*/
 		bool validSection(uint32_t sectionID) {
-			if (sectionID >= 0 && sectionID < header->sectionCount && sectionInfoTable[sectionID].offset != 0) {
+			if (sectionID < header->sectionCount && sectionInfoTable[sectionID].offset != 0) {
 				return true;
 			}
 			return false;

@@ -9,14 +9,13 @@ namespace RELPatch {
 		unsigned char bytes[4];
 		fileStream.read((char*)bytes, 4);
 
-		uint32_t value = ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]);
-		return ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]);
+		return (uint32_t)((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]);
 	}
 
 	inline uint16_t readBigShort(std::fstream &fileStream) {
 		unsigned char bytes[2];
 		fileStream.read((char*)bytes, 2);
-		return ((bytes[0] << 8) | bytes[1]);
+		return (uint16_t)((bytes[0] << 8) | bytes[1]);
 	}
 
 	inline uint8_t readBigByte(std::fstream &fileStream) {
