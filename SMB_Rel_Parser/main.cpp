@@ -33,7 +33,9 @@ int main(int argc, char *argv[]) {
 			<< "Destination Section Offset: " << pointers[i].symbolOffset << '\n'
 			<< "Difference from desired pointer: " << 0x373E8 - pointers[i].sourceSectionOffset << std::endl;
 	}
-	
+
+	relFile.applyRelocations();
+	/*
 	// Write single value to section
 	relFile.writeToSection(1, 32, 0xDEADBEEF);
 	relFile.writeToSection(1, 36, (uint16_t) 0xDEAD);
@@ -68,7 +70,7 @@ int main(int argc, char *argv[]) {
 
 	// Resize a section
 	relFile.expandSectionUnsafe(1, 1024);
-	
+	*/
 	return 0;
 }
 

@@ -6,6 +6,7 @@
 #include "fileFunctions.h"
 #include <string>
 #include <vector>
+#include <errno.h>
 
 namespace RELPatch {
 
@@ -32,7 +33,6 @@ namespace RELPatch {
 				parseRel();
 			}
 		}
-
 
 		/*
 			Retreives the current filesize of the rel file
@@ -613,10 +613,180 @@ namespace RELPatch {
 						currentSourceOffset = 0;
 						break;
 					}
-					
 				} while (relTableDest.relocationType != (uint8_t) RelocationType::R_DOLPHIN_END);
 			}
 			return pointers;
+		}
+
+		public:
+
+		/*
+			Applies the relocations and outputs the results in the file "relocatedRel.rel"
+			Experimental
+		*/
+		void applyRelocations() {
+			// Save the current position and go to the beginning of the file
+			std::streamoff savePos = relFile.tellg();
+			relFile.seekg(0, std::fstream::beg);
+
+			// Create a duplicate rel to avoid breaking the original
+			std::fstream relocated("relocatedRel.rel", std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
+			if (!relocated.is_open()) {
+				std::cout << "Failed to create relocations file: " << strerror(errno) << std::endl;
+				return;
+			}
+			relocated << relFile.rdbuf();
+			relocated.flush();
+			// Return the the previous file position
+			relFile.seekg(savePos, std::fstream::beg);
+
+			uint8_t currentSourceSectionID = 0;
+			uint32_t currentSourceOffset = 0;
+
+			uint32_t numRelocations = 0;
+			// Find only relavant import tables (with the same module ID as this rel file)
+			for (uint32_t i = 0; i < header->importTableCount; i++) {
+				// Only do patches for this rel file for now
+				if (importTable[i].moduleID == header->moduleID) {
+					RelocationTable relTableDest;
+					relTableDest.sourceSectionIndex = 0;
+					relTableDest.sourceSectionOffset = 0;
+
+					std::streamoff relocationsPosition = (std::streamoff) importTable[i].relocationsOffset;
+					do {
+						// Make sure we are in the right position of the relocations
+						relocated.seekg(relocationsPosition, std::fstream::beg);
+
+						relTableDest.offset = readBigShort(relocated);
+						relTableDest.relocationType = readBigByte(relocated);
+						relTableDest.sectionIndex = readBigByte(relocated);
+						relTableDest.symbolOffset = readBigInt(relocated);
+						relocationsPosition = relocated.tellg();
+						currentSourceOffset += relTableDest.offset;
+
+						// Absolute destination/source address
+						std::streamoff destinationAddress = toAddress(sectionInfoTable[relTableDest.sectionIndex].offset, relTableDest.symbolOffset);
+						std::streamoff sourceAddress = toAddress(sectionInfoTable[currentSourceSectionID].offset, currentSourceOffset);
+
+						// Declare variables used in switch
+						uint32_t existingValue;
+						uint16_t lowBits;
+						uint16_t highBits;
+						uint8_t lowByte;
+						uint32_t instructionToSymbolOffset;
+
+						// Determine what to do based on the relocation type
+						switch (relTableDest.relocationType) {
+						case (uint8_t)RelocationType::R_PPC_NONE:
+							// Do nothing
+							break;
+						case (uint8_t)RelocationType::R_PPC_ADDR32:
+						
+							relocated.seekg(destinationAddress, std::fstream::beg);
+
+							writeBigInt(relocated, (uint32_t)sourceAddress);
+							
+							break;
+						case (uint8_t)RelocationType::R_PPC_ADDR24:
+							relocated.seekg(destinationAddress, std::fstream::beg);
+							existingValue = readBigInt(relocated);
+							relocated.seekg(destinationAddress, std::fstream::beg);
+
+							highBits = (uint16_t)((sourceAddress >> 16) & 0xFFFF);
+							lowByte = (uint8_t)(sourceAddress & 0xFF);
+
+							// and out low 2 bits of lowByte
+							lowByte = (uint8_t) (lowByte & (~3));
+							// or in the low 2 bits of existingValue
+							lowByte |= (uint8_t)(existingValue & 0b11);
+
+							writeBigByte(relocated, 0);
+							writeBigShort(relocated, highBits);
+							writeBigByte(relocated, lowByte);
+							break;
+						case (uint8_t)RelocationType::R_PPC_ADDR16_LO:
+							// Offset by two in order to reach the low 16 bits
+							relocated.seekg(destinationAddress + 2, std::fstream::beg);
+
+							lowBits = (uint16_t)(sourceAddress & 0xFFFF);
+
+							writeBigShort(relocated, lowBits);
+							break;
+						case (uint8_t)RelocationType::R_PPC_ADDR16_HI:
+							relocated.seekg(destinationAddress, std::fstream::beg);
+
+							highBits = (uint16_t)((sourceAddress >> 16) & 0xFFFF);
+
+							writeBigShort(relocated, highBits);
+							break;
+						case (uint8_t)RelocationType::R_PPC_ADDR16_HA:
+							relocated.seekg(destinationAddress, std::fstream::beg);
+
+							highBits = (uint16_t)((sourceAddress >> 16) & 0xFFFF);
+							highBits += 1; // ? High 16 bits plus 0x10000
+
+							writeBigShort(relocated, highBits);
+							break;
+						case (uint8_t)RelocationType::R_PPC_ADDR14:
+						case (uint8_t)RelocationType::R_PPC_ADDR14_BRTAKEN:
+						case (uint8_t)RelocationType::R_PPC_ADDR14_BRNTAKEN:
+							relocated.seekg(destinationAddress, std::fstream::beg);
+							existingValue = readBigInt(relocated);
+							relocated.seekg(destinationAddress, std::fstream::beg);
+
+							lowBits = (uint16_t)(sourceAddress & 0x3FFF);
+
+							// and out low 2 bits of lowBits
+							lowBits = (uint16_t)(lowBits & (~3));
+							// or in the low 2 bits of existingValue
+							lowBits |= (uint16_t)(existingValue & 0b11);
+
+							writeBigShort(relocated, 0);
+							writeBigShort(relocated, lowBits);
+
+							break;
+						case (uint8_t)RelocationType::R_PPC_REL24:
+							relocated.seekg(destinationAddress, std::fstream::beg);
+
+							instructionToSymbolOffset = (uint32_t)(sourceAddress - relocationsPosition);
+
+							highBits = (uint16_t)((instructionToSymbolOffset >> 16) & 0xFFFF);
+							lowByte = (uint8_t)(instructionToSymbolOffset & 0xFF);
+
+							writeBigByte(relocated, 0);
+							writeBigShort(relocated, highBits);
+							writeBigByte(relocated, lowByte);
+							break;
+						case (uint8_t)RelocationType::R_PPC_REL14:
+							relocated.seekg(destinationAddress, std::fstream::beg);
+
+							instructionToSymbolOffset = (uint32_t)(sourceAddress - relocationsPosition);
+
+							lowBits = (uint16_t)(instructionToSymbolOffset & 0x3FFF);
+
+							writeBigShort(relocated, 0);
+							writeBigShort(relocated, lowBits);
+							break;
+						case (uint8_t)RelocationType::R_DOLPHIN_NOP:
+							// Do nothing
+							break;
+						case (uint8_t)RelocationType::R_DOLPHIN_SECTION:
+							currentSourceSectionID = relTableDest.sectionIndex;
+							currentSourceOffset = 0;
+							break;
+						case (uint8_t)RelocationType::R_DOLPHIN_END:
+
+							break;
+						}
+
+						++numRelocations;
+						if (numRelocations % 5000 == 0) {
+							//std::cout << "Completed " << numRelocations << " Relocations" << std::endl;
+						}
+					} while (relTableDest.relocationType != (uint8_t)RelocationType::R_DOLPHIN_END);
+				}
+			}
+
 		}
 	};
 }

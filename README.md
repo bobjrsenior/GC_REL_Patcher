@@ -68,6 +68,10 @@ May not be added
 
 **Relocation functions**
 
+Apply the relocations and output results to relocatedRel.rel (only apply relocations for this module)
+
+    applyRelocations() // Experimental
+
 The absolute offset of the relocations in bytes
     
     relocationsOffset(uint32_t sectionID) // Implemented
