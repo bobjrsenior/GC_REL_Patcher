@@ -674,111 +674,112 @@ namespace RELPatch {
 						uint16_t highBits;
 						uint8_t lowByte;
 						uint32_t instructionToSymbolOffset;
+						if(relTableDest.relocationType == (uint8_t)RelocationType::R_DOLPHIN_SECTION
+							|| (validSection(currentSourceSectionID) && validSection(relTableDest.sectionIndex))) {
+							// Determine what to do based on the relocation type
+							switch (relTableDest.relocationType) {
+							case (uint8_t)RelocationType::R_PPC_NONE:
+								// Do nothing
+								break;
+							case (uint8_t)RelocationType::R_PPC_ADDR32:
 
-						// Determine what to do based on the relocation type
-						switch (relTableDest.relocationType) {
-						case (uint8_t)RelocationType::R_PPC_NONE:
-							// Do nothing
-							break;
-						case (uint8_t)RelocationType::R_PPC_ADDR32:
-						
-							relocated.seekg(destinationAddress, std::fstream::beg);
+								relocated.seekg(destinationAddress, std::fstream::beg);
 
-							writeBigInt(relocated, (uint32_t)sourceAddress);
-							
-							break;
-						case (uint8_t)RelocationType::R_PPC_ADDR24:
-							relocated.seekg(destinationAddress, std::fstream::beg);
-							existingValue = readBigInt(relocated);
-							relocated.seekg(destinationAddress, std::fstream::beg);
+								writeBigInt(relocated, (uint32_t)sourceAddress);
 
-							highBits = (uint16_t)((sourceAddress >> 16) & 0xFFFF);
-							lowByte = (uint8_t)(sourceAddress & 0xFF);
+								break;
+							case (uint8_t)RelocationType::R_PPC_ADDR24:
+								relocated.seekg(destinationAddress, std::fstream::beg);
+								existingValue = readBigInt(relocated);
+								relocated.seekg(destinationAddress, std::fstream::beg);
 
-							// and out low 2 bits of lowByte
-							lowByte = (uint8_t) (lowByte & (~3));
-							// or in the low 2 bits of existingValue
-							lowByte |= (uint8_t)(existingValue & 0b11);
+								highBits = (uint16_t)((sourceAddress >> 16) & 0xFFFF);
+								lowByte = (uint8_t)(sourceAddress & 0xFF);
 
-							writeBigByte(relocated, 0);
-							writeBigShort(relocated, highBits);
-							writeBigByte(relocated, lowByte);
-							break;
-						case (uint8_t)RelocationType::R_PPC_ADDR16_LO:
-							// Offset by two in order to reach the low 16 bits
-							relocated.seekg(destinationAddress + 2, std::fstream::beg);
+								// and out low 2 bits of lowByte
+								lowByte = (uint8_t)(lowByte & (~3));
+								// or in the low 2 bits of existingValue
+								lowByte |= (uint8_t)(existingValue & 0b11);
 
-							lowBits = (uint16_t)(sourceAddress & 0xFFFF);
+								writeBigByte(relocated, 0);
+								writeBigShort(relocated, highBits);
+								writeBigByte(relocated, lowByte);
+								break;
+							case (uint8_t)RelocationType::R_PPC_ADDR16_LO:
+								// Offset by two in order to reach the low 16 bits
+								relocated.seekg(destinationAddress + 2, std::fstream::beg);
 
-							writeBigShort(relocated, lowBits);
-							break;
-						case (uint8_t)RelocationType::R_PPC_ADDR16_HI:
-							relocated.seekg(destinationAddress, std::fstream::beg);
+								lowBits = (uint16_t)(sourceAddress & 0xFFFF);
 
-							highBits = (uint16_t)((sourceAddress >> 16) & 0xFFFF);
+								writeBigShort(relocated, lowBits);
+								break;
+							case (uint8_t)RelocationType::R_PPC_ADDR16_HI:
+								relocated.seekg(destinationAddress, std::fstream::beg);
 
-							writeBigShort(relocated, highBits);
-							break;
-						case (uint8_t)RelocationType::R_PPC_ADDR16_HA:
-							relocated.seekg(destinationAddress, std::fstream::beg);
+								highBits = (uint16_t)((sourceAddress >> 16) & 0xFFFF);
 
-							highBits = (uint16_t)((sourceAddress >> 16) & 0xFFFF);
-							highBits += 1; // ? High 16 bits plus 0x10000
+								writeBigShort(relocated, highBits);
+								break;
+							case (uint8_t)RelocationType::R_PPC_ADDR16_HA:
+								relocated.seekg(destinationAddress, std::fstream::beg);
 
-							writeBigShort(relocated, highBits);
-							break;
-						case (uint8_t)RelocationType::R_PPC_ADDR14:
-						case (uint8_t)RelocationType::R_PPC_ADDR14_BRTAKEN:
-						case (uint8_t)RelocationType::R_PPC_ADDR14_BRNTAKEN:
-							relocated.seekg(destinationAddress, std::fstream::beg);
-							existingValue = readBigInt(relocated);
-							relocated.seekg(destinationAddress, std::fstream::beg);
+								highBits = (uint16_t)((sourceAddress >> 16) & 0xFFFF);
+								highBits += 1; // ? High 16 bits plus 0x10000
 
-							lowBits = (uint16_t)(sourceAddress & 0x3FFF);
+								writeBigShort(relocated, highBits);
+								break;
+							case (uint8_t)RelocationType::R_PPC_ADDR14:
+							case (uint8_t)RelocationType::R_PPC_ADDR14_BRTAKEN:
+							case (uint8_t)RelocationType::R_PPC_ADDR14_BRNTAKEN:
+								relocated.seekg(destinationAddress, std::fstream::beg);
+								existingValue = readBigInt(relocated);
+								relocated.seekg(destinationAddress, std::fstream::beg);
 
-							// and out low 2 bits of lowBits
-							lowBits = (uint16_t)(lowBits & (~3));
-							// or in the low 2 bits of existingValue
-							lowBits |= (uint16_t)(existingValue & 0b11);
+								lowBits = (uint16_t)(sourceAddress & 0x3FFF);
 
-							writeBigShort(relocated, 0);
-							writeBigShort(relocated, lowBits);
+								// and out low 2 bits of lowBits
+								lowBits = (uint16_t)(lowBits & (~3));
+								// or in the low 2 bits of existingValue
+								lowBits |= (uint16_t)(existingValue & 0b11);
 
-							break;
-						case (uint8_t)RelocationType::R_PPC_REL24:
-							relocated.seekg(destinationAddress, std::fstream::beg);
+								writeBigShort(relocated, 0);
+								writeBigShort(relocated, lowBits);
 
-							instructionToSymbolOffset = (uint32_t)(sourceAddress - relocationsPosition);
+								break;
+							case (uint8_t)RelocationType::R_PPC_REL24:
+								relocated.seekg(destinationAddress, std::fstream::beg);
 
-							highBits = (uint16_t)((instructionToSymbolOffset >> 16) & 0xFFFF);
-							lowByte = (uint8_t)(instructionToSymbolOffset & 0xFF);
+								instructionToSymbolOffset = (uint32_t)(sourceAddress - relocationsPosition);
 
-							writeBigByte(relocated, 0);
-							writeBigShort(relocated, highBits);
-							writeBigByte(relocated, lowByte);
-							break;
-						case (uint8_t)RelocationType::R_PPC_REL14:
-							relocated.seekg(destinationAddress, std::fstream::beg);
+								highBits = (uint16_t)((instructionToSymbolOffset >> 16) & 0xFFFF);
+								lowByte = (uint8_t)(instructionToSymbolOffset & 0xFF);
 
-							instructionToSymbolOffset = (uint32_t)(sourceAddress - relocationsPosition);
+								writeBigByte(relocated, 0);
+								writeBigShort(relocated, highBits);
+								writeBigByte(relocated, lowByte);
+								break;
+							case (uint8_t)RelocationType::R_PPC_REL14:
+								relocated.seekg(destinationAddress, std::fstream::beg);
 
-							lowBits = (uint16_t)(instructionToSymbolOffset & 0x3FFF);
+								instructionToSymbolOffset = (uint32_t)(sourceAddress - relocationsPosition);
 
-							writeBigShort(relocated, 0);
-							writeBigShort(relocated, lowBits);
-							break;
-						case (uint8_t)RelocationType::R_DOLPHIN_NOP:
-							// Do nothing
-							break;
-						case (uint8_t)RelocationType::R_DOLPHIN_SECTION:
-							currentSourceSectionID = relTableDest.sectionIndex;
-							currentSourceOffset = 0;
-							break;
-						case (uint8_t)RelocationType::R_DOLPHIN_END:
+								lowBits = (uint16_t)(instructionToSymbolOffset & 0x3FFF);
 
-							break;
+								writeBigShort(relocated, 0);
+								writeBigShort(relocated, lowBits);
+								break;
+							case (uint8_t)RelocationType::R_DOLPHIN_NOP:
+								// Do nothing
+								break;
+							case (uint8_t)RelocationType::R_DOLPHIN_SECTION:
+								currentSourceSectionID = relTableDest.sectionIndex;
+								currentSourceOffset = 0;
+								break;
+							case (uint8_t)RelocationType::R_DOLPHIN_END:
+
+								break;
+							}
 						}
-
 						++numRelocations;
 						if (numRelocations % 5000 == 0) {
 							//std::cout << "Completed " << numRelocations << " Relocations" << std::endl;
