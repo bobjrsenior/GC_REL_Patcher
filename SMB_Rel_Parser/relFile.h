@@ -567,7 +567,8 @@ namespace RELPatch {
 				relFile.seekg((std::streamoff) importTable[i].relocationsOffset, std::fstream::beg);
 
 				RelocationTable relTableDest;
-
+				relTableDest.sourceSectionIndex = 0;
+				relTableDest.sourceSectionOffset = 0;
 				do{
 					relTableDest.absoluteRelocationOffset = (uint32_t) relFile.tellg();
 					relTableDest.offset = readBigShort(relFile);
@@ -587,7 +588,7 @@ namespace RELPatch {
 							}
 
 							// Add this pointers information to the pointer list
-							relTableDest.moduleID = i;
+							relTableDest.moduleID = importTable[i].moduleID;
 							relTableDest.sourceSectionIndex = currentSourceSectionID;
 							relTableDest.sourceSectionOffset = currentSourceOffset;
 							pointers.push_back(relTableDest);
