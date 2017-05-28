@@ -7,7 +7,12 @@ Finish api functions, write inline documentation, determine any other api functi
 
 ## API (Early/In progress)
 
-**Global Functions**
+**Global/Uncategorized Functions**
+
+Finds a list of relocations that reference a specified offset into a section
+
+    findPointerAddresses(uint32_t sectionID, uint32_t offset) // Implemented?
+	findPointerAddresses(uint32_t sectionID, uint32_t offset, uint32_t tolerance) // Implemented?
 
 Get the current filesize
 

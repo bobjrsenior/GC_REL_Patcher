@@ -21,6 +21,19 @@ int main(int argc, char *argv[]) {
 	}*/
 	RELPatch::RELFile relFile("mkb2.main_loop.rel");
 	
+	std::vector<RELPatch::RelocationTable> pointers = relFile.findPointerAddresses(5, 0x373E8, 64);
+	std::cout << "Results:" << std::endl;
+	for (uint32_t i = 0; i < pointers.size(); i++) {
+		std::cout << "Absolute offset of relocation entry: " << pointers[i].absoluteRelocationOffset << '\n'
+			<< "Relocation Type: " << (uint32_t)pointers[i].relocationType << '\n'
+			<< "Destination Module ID: " << pointers[i].moduleID << '\n'
+			<< "Source Section ID: " << (uint32_t)pointers[i].sourceSectionIndex << '\n'
+			<< "Source Section Offset: " << pointers[i].sourceSectionOffset << '\n'
+			<< "Destination Section ID: " << (uint32_t)pointers[i].sectionIndex << '\n'
+			<< "Destination Section Offset: " << pointers[i].symbolOffset << '\n'
+			<< "Difference from desired pointer: " << 0x373E8 - pointers[i].sourceSectionOffset << std::endl;
+	}
+	
 	// Write single value to section
 	relFile.writeToSection(1, 32, 0xDEADBEEF);
 	relFile.writeToSection(1, 36, (uint16_t) 0xDEAD);
@@ -55,7 +68,7 @@ int main(int argc, char *argv[]) {
 
 	// Resize a section
 	relFile.expandSectionUnsafe(1, 1024);
-
+	
 	return 0;
 }
 

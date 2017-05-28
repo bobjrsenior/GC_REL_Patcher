@@ -44,7 +44,7 @@ namespace RELPatch {
 		uint32_t bssAlignment;				// 32 for 4-byte alignment? (v2, v3 only)
 		uint32_t unknown;					// (v3 only)
 
-		//Not in the actual specs
+		// Not in the actual specs
 		uint32_t importTableCount;			// Number of entries in the import table
 	}Header;
 
@@ -63,6 +63,13 @@ namespace RELPatch {
 		uint8_t relocationType;				// Type of the relocation
 		uint8_t sectionIndex;				// Section index of the symbol being patched to (only used for module patches, not DOL patches)
 		uint32_t symbolOffset;				// The section-relative offset of the symbol being patched to (module patch). Absolute address of the symbol being patched to (DOL patch)
+
+		// Not in the actual specs
+		uint32_t moduleID;
+		uint32_t absoluteRelocationOffset;
+		uint32_t sourceSectionOffset;
+		uint8_t sourceSectionIndex;
+
 	}RelocationTable;
 
 }

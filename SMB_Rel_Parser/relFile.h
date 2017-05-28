@@ -5,6 +5,7 @@
 #include "structs.h"
 #include "fileFunctions.h"
 #include <string>
+#include <vector>
 
 namespace RELPatch {
 
@@ -31,6 +32,7 @@ namespace RELPatch {
 				parseRel();
 			}
 		}
+
 
 		/*
 			Retreives the current filesize of the rel file
@@ -206,6 +208,28 @@ namespace RELPatch {
 
 				copyData(sourceSectionAbsoluteAddress, destinationSectionAbsoluteAddress, amount);
 			}
+		}
+
+		/*
+			Finds a list of relocation entries that point to <offset> within <sectionID>
+		*/
+		std::vector<RelocationTable> findPointerAddresses(uint32_t sectionID, uint32_t offset) {
+			if (validSection(sectionID) && offset < toAddress(sectionInfoTable[sectionID].size)) {
+				return findPointers(sectionID, offset);
+			}
+			std::vector<RelocationTable> empty;
+			return empty;
+		}
+
+		/*
+			Finds a list of relocation entries that point to <offset> within <sectionID> with an error range of <tolerance> bytes
+		*/
+		std::vector<RelocationTable> findPointerAddresses(uint32_t sectionID, uint32_t offset, uint32_t tolerance) {
+			if (validSection(sectionID) && offset < toAddress(sectionInfoTable[sectionID].size)) {
+				return findPointers(sectionID, offset, tolerance);
+			}
+			std::vector<RelocationTable> empty;
+			return empty;
 		}
 
 		////////
@@ -503,6 +527,95 @@ namespace RELPatch {
 
 			// Return the the previous file position
 			relFile.seekg(savePos, std::fstream::beg);
+		}
+
+		/////
+
+		/*
+			Finds a list of relocation entries that point to <offset> within <sectionID>
+			Assumes sectionID is valid and <offset> is less than the size of <sectionID>
+		*/
+		std::vector<RelocationTable> findPointers(uint32_t sectionID, uint32_t offset) {
+			return findPointers(sectionID, offset, 0);
+		}
+
+		/*
+			Finds a list of relocation entries that point to <offset> within <sectionID> with an error range of <tolerance> bytes
+			Assumes sectionID is valid and <offset> is less than the size of <sectionID>
+		*/
+		std::vector<RelocationTable> findPointers(uint32_t sectionID, uint32_t offset, uint32_t tolerance) {
+			
+			uint8_t currentSourceSectionID = 0;
+			uint32_t currentSourceOffset = 0;
+			std::vector<RelocationTable> pointers;
+			uint32_t minDifference = 0xFFFFFFFF;
+
+			// Set the lower bound being careful about underflow
+			uint32_t lowerBound;
+			if (tolerance <= offset) {
+				lowerBound = offset - tolerance;
+			}
+			else {
+				lowerBound = 0;
+			}
+			
+
+
+			// Find only relavant import tables (with the same module ID as this rel file)
+			for (uint32_t i = 0; i < header->importTableCount; i++) {
+				// Traverse the import tables relocations
+				relFile.seekg((std::streamoff) importTable[i].relocationsOffset, std::fstream::beg);
+
+				RelocationTable relTableDest;
+
+				do{
+					relTableDest.absoluteRelocationOffset = (uint32_t) relFile.tellg();
+					relTableDest.offset = readBigShort(relFile);
+					relTableDest.relocationType = readBigByte(relFile);
+					relTableDest.sectionIndex = readBigByte(relFile);
+					relTableDest.symbolOffset = readBigInt(relFile);
+					currentSourceOffset += relTableDest.offset;
+
+					// We are looking for a pointer in a specific section
+					if (currentSourceSectionID == sectionID) {
+						// If we are within tolerance and this is the closest offset so far or tied with the closest
+						if (currentSourceOffset >= lowerBound && currentSourceOffset <= offset && offset - currentSourceOffset <= minDifference) {
+							// If nothing else has been this close, clear the pointer list
+							if (offset - currentSourceOffset < minDifference) {
+								minDifference = offset - currentSourceOffset;
+								pointers.clear();
+							}
+
+							// Add this pointers information to the pointer list
+							relTableDest.moduleID = i;
+							relTableDest.sourceSectionIndex = currentSourceSectionID;
+							relTableDest.sourceSectionOffset = currentSourceOffset;
+							pointers.push_back(relTableDest);
+							
+							/*
+							std::cout << "Calculated symbol" << std::endl;
+							std::cout << "File Position of Relocations: " << relFile.tellg() << std::endl;
+							std::cout << "File position of pointer: " << toAddress(sectionInfoTable[currentSourceSectionID].offset, currentSourceOffset) << std::endl;
+							std::cout << "Distance from wanted position: " << offset - currentSourceOffset << std::endl;
+							std::cout << "Section: " << (uint32_t)currentSourceSectionID << std::endl;
+							std::cout << "Offet: " << currentSourceOffset << std::endl;
+							std::cout << "Relocation Type: " << (uint32_t)relTableDest.relocationType << std::endl;
+							std::cout << "Module ID: " << i << std::endl;
+							*/
+						}
+					}
+					
+					// Determine what to do based on the relocation type
+					switch (relTableDest.relocationType) {
+					case (uint8_t)RelocationType::R_DOLPHIN_SECTION:
+						currentSourceSectionID = relTableDest.sectionIndex;
+						currentSourceOffset = 0;
+						break;
+					}
+					
+				} while (relTableDest.relocationType != (uint8_t) RelocationType::R_DOLPHIN_END);
+			}
+			return pointers;
 		}
 	};
 }
