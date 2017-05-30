@@ -643,29 +643,36 @@ namespace RELPatch {
 			uint8_t currentSourceSectionID = 0;
 			uint32_t currentSourceOffset = 0;
 
+			uint8_t currentDestinationSectionID = 0;
+			uint32_t currentDestinationOffset = 0;
+
 			uint32_t numRelocations = 0;
 			// Find only relavant import tables (with the same module ID as this rel file)
 			for (uint32_t i = 0; i < header->importTableCount; i++) {
 				// Only do patches for this rel file for now
 				if (importTable[i].moduleID == header->moduleID) {
-					RelocationTable relTableDest;
-					relTableDest.sourceSectionIndex = 0;
-					relTableDest.sourceSectionOffset = 0;
+					RelocationTable relTableSource;
+					currentSourceSectionID = 0;
+					currentSourceOffset = 0;
 
 					std::streamoff relocationsPosition = (std::streamoff) importTable[i].relocationsOffset;
 					do {
 						// Make sure we are in the right position of the relocations
 						relocated.seekg(relocationsPosition, std::fstream::beg);
 
-						relTableDest.offset = readBigShort(relocated);
-						relTableDest.relocationType = readBigByte(relocated);
-						relTableDest.sectionIndex = readBigByte(relocated);
-						relTableDest.symbolOffset = readBigInt(relocated);
+						relTableSource.offset = readBigShort(relocated);
+						relTableSource.relocationType = readBigByte(relocated);
+						relTableSource.sectionIndex = readBigByte(relocated);
+						relTableSource.symbolOffset = readBigInt(relocated);
 						relocationsPosition = relocated.tellg();
-						currentSourceOffset += relTableDest.offset;
+
+						currentSourceSectionID = relTableSource.sectionIndex;
+						currentSourceOffset = relTableSource.symbolOffset;
+
+						currentDestinationOffset += relTableSource.offset;
 
 						// Absolute destination/source address
-						std::streamoff destinationAddress = toAddress(sectionInfoTable[relTableDest.sectionIndex].offset, relTableDest.symbolOffset);
+						std::streamoff destinationAddress = toAddress(sectionInfoTable[currentDestinationSectionID].offset, currentDestinationOffset);
 						std::streamoff sourceAddress = toAddress(sectionInfoTable[currentSourceSectionID].offset, currentSourceOffset);
 
 						// Declare variables used in switch
@@ -674,10 +681,10 @@ namespace RELPatch {
 						uint16_t highBits;
 						uint8_t lowByte;
 						uint32_t instructionToSymbolOffset;
-						if(relTableDest.relocationType == (uint8_t)RelocationType::R_DOLPHIN_SECTION
-							|| (validSection(currentSourceSectionID) && validSection(relTableDest.sectionIndex))) {
+						if(relTableSource.relocationType == (uint8_t)RelocationType::R_DOLPHIN_SECTION
+							|| (validSection(currentSourceSectionID) && validSection(currentDestinationSectionID))) {
 							// Determine what to do based on the relocation type
-							switch (relTableDest.relocationType) {
+							switch (relTableSource.relocationType) {
 							case (uint8_t)RelocationType::R_PPC_NONE:
 								// Do nothing
 								break;
@@ -772,8 +779,8 @@ namespace RELPatch {
 								// Do nothing
 								break;
 							case (uint8_t)RelocationType::R_DOLPHIN_SECTION:
-								currentSourceSectionID = relTableDest.sectionIndex;
-								currentSourceOffset = 0;
+								currentDestinationSectionID = relTableSource.sectionIndex;
+								currentDestinationOffset = 0;
 								break;
 							case (uint8_t)RelocationType::R_DOLPHIN_END:
 
@@ -784,7 +791,7 @@ namespace RELPatch {
 						if (numRelocations % 5000 == 0) {
 							//std::cout << "Completed " << numRelocations << " Relocations" << std::endl;
 						}
-					} while (relTableDest.relocationType != (uint8_t)RelocationType::R_DOLPHIN_END);
+					} while (relTableSource.relocationType != (uint8_t)RelocationType::R_DOLPHIN_END);
 				}
 			}
 
