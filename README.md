@@ -70,7 +70,7 @@ May not be added
 
 Apply the relocations and output results to relocatedRel.rel (only apply relocations for this module)
 
-    applyRelocations() // Experimental
+    applyRelocations() // Implemented?
 
 The absolute offset of the relocations in bytes
     

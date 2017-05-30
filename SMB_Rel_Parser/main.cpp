@@ -27,11 +27,11 @@ int main(int argc, char *argv[]) {
 		std::cout << "Absolute offset of relocation entry: " << pointers[i].absoluteRelocationOffset << '\n'
 			<< "Relocation Type: " << (uint32_t)pointers[i].relocationType << '\n'
 			<< "Destination Module ID: " << pointers[i].moduleID << '\n'
-			<< "Source Section ID: " << (uint32_t)pointers[i].sourceSectionIndex << '\n'
-			<< "Source Section Offset: " << pointers[i].sourceSectionOffset << '\n'
-			<< "Destination Section ID: " << (uint32_t)pointers[i].sectionIndex << '\n'
-			<< "Destination Section Offset: " << pointers[i].symbolOffset << '\n'
-			<< "Difference from desired pointer: " << 0x373E8 - pointers[i].sourceSectionOffset << std::endl;
+			<< "Source Section ID: " << (uint32_t)pointers[i].sectionIndex << '\n'
+			<< "Source Section Offset: " << pointers[i].symbolOffset << '\n'
+			<< "Destination Section ID: " << (uint32_t)pointers[i].destinationSectionOffset << '\n'
+			<< "Destination Section Offset: " << pointers[i].destinationSectionOffset << '\n'
+			<< "Difference from desired pointer: " << 0x373E8 - pointers[i].symbolOffset << std::endl;
 	}
 
 	relFile.applyRelocations();

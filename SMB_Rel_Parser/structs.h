@@ -67,8 +67,8 @@ namespace RELPatch {
 		// Not in the actual specs
 		uint32_t moduleID;
 		uint32_t absoluteRelocationOffset;
-		uint32_t sourceSectionOffset;
-		uint8_t sourceSectionIndex;
+		uint32_t destinationSectionOffset;
+		uint8_t destinationSectionIndex;
 
 	}RelocationTable;
 

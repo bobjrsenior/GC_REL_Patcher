@@ -544,9 +544,7 @@ namespace RELPatch {
 			Assumes sectionID is valid and <offset> is less than the size of <sectionID>
 		*/
 		std::vector<RelocationTable> findPointers(uint32_t sectionID, uint32_t offset, uint32_t tolerance) {
-			
-			uint8_t currentSourceSectionID = 0;
-			uint32_t currentSourceOffset = 0;
+
 			std::vector<RelocationTable> pointers;
 			uint32_t minDifference = 0xFFFFFFFF;
 
@@ -567,15 +565,25 @@ namespace RELPatch {
 				relFile.seekg((std::streamoff) importTable[i].relocationsOffset, std::fstream::beg);
 
 				RelocationTable relTableDest;
-				relTableDest.sourceSectionIndex = 0;
-				relTableDest.sourceSectionOffset = 0;
+				relTableDest.destinationSectionIndex = 0;
+				relTableDest.destinationSectionOffset = 0;
+				
+				uint8_t currentSourceSectionID = 0;
+				uint32_t currentSourceOffset = 0;
+
+				uint8_t currentDestinationSectionID = 0;
+				uint32_t currentDestinationOffset = 0;
+
 				do{
 					relTableDest.absoluteRelocationOffset = (uint32_t) relFile.tellg();
 					relTableDest.offset = readBigShort(relFile);
 					relTableDest.relocationType = readBigByte(relFile);
 					relTableDest.sectionIndex = readBigByte(relFile);
 					relTableDest.symbolOffset = readBigInt(relFile);
-					currentSourceOffset += relTableDest.offset;
+
+					currentSourceSectionID = relTableDest.sectionIndex;
+					currentSourceOffset = relTableDest.symbolOffset;
+					currentDestinationOffset += relTableDest.offset;
 
 					// We are looking for a pointer in a specific section
 					if (currentSourceSectionID == sectionID) {
@@ -589,14 +597,14 @@ namespace RELPatch {
 
 							// Add this pointers information to the pointer list
 							relTableDest.moduleID = importTable[i].moduleID;
-							relTableDest.sourceSectionIndex = currentSourceSectionID;
-							relTableDest.sourceSectionOffset = currentSourceOffset;
+							relTableDest.destinationSectionIndex = currentDestinationSectionID;
+							relTableDest.destinationSectionOffset = currentDestinationOffset;
 							pointers.push_back(relTableDest);
 							
 							/*
 							std::cout << "Calculated symbol" << std::endl;
 							std::cout << "File Position of Relocations: " << relFile.tellg() << std::endl;
-							std::cout << "File position of pointer: " << toAddress(sectionInfoTable[currentSourceSectionID].offset, currentSourceOffset) << std::endl;
+							std::cout << "File position of pointer: " << toAddress(sectionInfoTable[currentSourceSesourceSectionIndexctionID].offset, currentSourceOffset) << std::endl;
 							std::cout << "Distance from wanted position: " << offset - currentSourceOffset << std::endl;
 							std::cout << "Section: " << (uint32_t)currentSourceSectionID << std::endl;
 							std::cout << "Offet: " << currentSourceOffset << std::endl;
@@ -609,8 +617,8 @@ namespace RELPatch {
 					// Determine what to do based on the relocation type
 					switch (relTableDest.relocationType) {
 					case (uint8_t)RelocationType::R_DOLPHIN_SECTION:
-						currentSourceSectionID = relTableDest.sectionIndex;
-						currentSourceOffset = 0;
+						currentDestinationSectionID = relTableDest.sectionIndex;
+						currentDestinationOffset = 0;
 						break;
 					}
 				} while (relTableDest.relocationType != (uint8_t) RelocationType::R_DOLPHIN_END);
