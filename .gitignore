@@ -210,3 +210,12 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+
+# Opendb VC file
+*.VC.opendb
+
+# Rel files
+*.rel
+
+# HxD Backup Files
+*.bak
