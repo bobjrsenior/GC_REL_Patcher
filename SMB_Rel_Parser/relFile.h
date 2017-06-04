@@ -61,6 +61,21 @@ namespace RELPatch {
 		}
 
 		/*
+			Gets the size of <sectionID> rounded up to the next 4 bytes
+			Return -1 on invalid <sectionID>
+		*/
+		uint32_t sectionSizeRounded(uint32_t sectionID) {
+			if (validSection(sectionID)) {
+				uint32_t size = sectionInfoTable[sectionID].size;
+				if (size % 4 != 0) {
+					size += 4 - (size % 4);
+				}
+				return sectionInfoTable[sectionID].size;
+			}
+			return 0xFFFFFFFF;
+		}
+
+		/*
 			Gets the offset of <sectionID>
 			Return -1 on invalid <sectionID>
 		*/
@@ -158,7 +173,7 @@ namespace RELPatch {
 
 				// Update our stored section offset
 				sectionInfoTable[sectionID].offset = toSectionOffsetFormat((uint32_t)newSectionOffset, isExecutable);
-				
+				std::cout << sectionInfoTable[sectionID].offset << std::endl;
 				// Update the rel file's section offset
 				relFile.seekg(header->sectionInfoOffset + (0x8 * sectionID), std::fstream::beg);
 				writeBigInt(relFile, sectionInfoTable[sectionID].offset);
@@ -169,7 +184,7 @@ namespace RELPatch {
 			Resizes <sectionID> to <newSize>
 			No bounds/overlap checks are done
 		*/
-		void resizeSectionUnsafe(uint32_t sectionID, uint32_t newSize) {
+		uint32_t resizeSectionUnsafe(uint32_t sectionID, uint32_t newSize) {
 			if (validSection(sectionID) && newSize > 0) {
 				// Update our stored section offset
 				sectionInfoTable[sectionID].size = newSize;
@@ -177,7 +192,10 @@ namespace RELPatch {
 				// Update the rel file's section offset
 				relFile.seekg(header->sectionInfoOffset + (0x8 * sectionID) + 0x4, std::fstream::beg);
 				writeBigInt(relFile, sectionInfoTable[sectionID].size);
+
+				return sectionInfoTable[sectionID].size;
 			}
+			return 0xFFFFFFFF;
 		}
 
 		/*
@@ -185,10 +203,28 @@ namespace RELPatch {
 			Amount can only be positive (it's unsigned after all)
 			No bounds/overlap checks are done
 		*/
-		void expandSectionUnsafe(uint32_t sectionID, uint32_t amount) {
+		uint32_t expandSectionUnsafe(uint32_t sectionID, uint32_t amount) {
 			if (validSection(sectionID) && amount > 0) {
-				resizeSectionUnsafe(sectionID, sectionInfoTable[sectionID].size + amount);
+				return resizeSectionUnsafe(sectionID, sectionInfoTable[sectionID].size + amount);
 			}
+			return 0xFFFFFFFF;
+		}
+
+		/*
+			Expands <sectionID> by <amount> rounded up to the next 4 bytes
+			Amount can only be positive (it's unsigned after all)
+			No bounds/overlap checks are done
+		*/
+		uint32_t expandSectionUnsafeRounded(uint32_t sectionID, uint32_t amount) {
+			if (validSection(sectionID) && amount > 0) {
+				uint32_t newSize = sectionInfoTable[sectionID].size;
+				if (newSize % 4 != 0) {
+					newSize += 4 - (newSize % 4);
+				}
+				newSize += amount;
+				return resizeSectionUnsafe(sectionID, newSize);
+			}
+			return 0xFFFFFFFF;
 		}
 
 		/*
@@ -202,7 +238,7 @@ namespace RELPatch {
 		Copy <amount> number of bytes from <sourceOffset> in <sourceSectionID> to <destinationOffset> in <destinationSectionID>
 		*/
 		void copyData(uint32_t sourceSectionID, uint32_t sourceOffset, uint32_t destinationSectionID, uint32_t destinationOffset, uint32_t amount) {
-			if (validSection(sourceSectionID) && validSection(destinationOffset)) {
+			if (validSection(sourceSectionID) && validSection(destinationSectionID)) {
 				int64_t sourceSectionAbsoluteAddress = toAddress(sectionInfoTable[sourceSectionID].offset, sourceOffset);
 				int64_t destinationSectionAbsoluteAddress = toAddress(sectionInfoTable[destinationSectionID].offset, destinationOffset);
 
@@ -308,7 +344,9 @@ namespace RELPatch {
 			Combines an absolute <offset> and a boolean of if the address <isExecutable> into a raw rel position
 		*/
 		uint32_t toSectionOffsetFormat(uint32_t offset, uint8_t isExecutable) {
-			return toAddress(offset) | isExecutable;
+			uint32_t address = toAddress(offset);
+			uint32_t orValue = address | isExecutable;
+			return orValue;
 		}
 
 		/*

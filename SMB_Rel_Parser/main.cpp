@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 	}*/
 	RELPatch::RELFile relFile("mkb2.main_loop.rel");
 	
-	std::vector<RELPatch::RelocationTable> pointers = relFile.findPointerAddresses(5, 0x373E8, 64);
+	std::vector<RELPatch::RelocationTable> pointers = relFile.findPointerAddresses(5, 0x33550, 0);
 	std::cout << "Results:" << std::endl;
 	for (uint32_t i = 0; i < pointers.size(); i++) {
 		std::cout << "Absolute offset of relocation entry: " << pointers[i].absoluteRelocationOffset << '\n'
@@ -29,12 +29,19 @@ int main(int argc, char *argv[]) {
 			<< "Destination Module ID: " << pointers[i].moduleID << '\n'
 			<< "Source Section ID: " << (uint32_t)pointers[i].sectionIndex << '\n'
 			<< "Source Section Offset: " << pointers[i].symbolOffset << '\n'
+			<< "Source Absolute Address"
 			<< "Destination Section ID: " << (uint32_t)pointers[i].destinationSectionOffset << '\n'
 			<< "Destination Section Offset: " << pointers[i].destinationSectionOffset << '\n'
-			<< "Difference from desired pointer: " << 0x373E8 - pointers[i].symbolOffset << std::endl;
+			<< "Difference from desired pointer: " << 0x33550 - pointers[i].symbolOffset << std::endl;
 	}
 
-	relFile.applyRelocations();
+	//uint32_t sectionSize = relFile.sectionSizeRounded(5);
+	//relFile.moveSectionToEnd(5);
+	//relFile.expandSectionUnsafeRounded(5, 0x364 + 4);
+	//relFile.copyData(5, 0x33550, sectionSize, 0x364);
+	//relFile.writeToRelocations(0x7315C , (uint32_t)sectionSize);
+
+	//relFile.applyRelocations();
 	/*
 	// Write single value to section
 	relFile.writeToSection(1, 32, 0xDEADBEEF);
