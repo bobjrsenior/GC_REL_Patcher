@@ -23,6 +23,7 @@ Get the current filesize
 The size of a section in bytes
     
     sectionSize(uint32_t sectionID) // Implemented
+	sectionSizeRounded(uint32_t sectionID) // Implemented
 
 The absolute offset of a section in bytes
     
@@ -36,12 +37,18 @@ Resize a section. No bounds or overlap checking is done
 
     resizeSectionUnsafe(uint32_t sectionID, newSize); // Implemented
     expandSectionUnsafe(uint32_t sectionID, uint32_t amount) // Implemented
+	expandSectionUnsafeRounded(uint32_t sectionID, uint32_t amount) // Implemented
 
 Copies data from one location within a section to another
 
     copyData(uint32_t sectionID, uint32_t sourceOffset, uint32_t destinationOffset, uint32_t amount)
     copyData(uint32_t sourceSectionID, uint32_t sourceOffset, uint32_t destinationSectionID, uint32_t destinationOffset, uint32_t amount)
     
+Reads <amount> bytes from the specified <sourceOffset> in the specified <sourceSectionID> and stored it in a buffer.
+
+    readData(uint32_t sourceSectionID, uint32_t sourceOffset, uint32_t amount)
+    readData(uint32_t sourceSectionID, uint32_t sourceOffset, char *buffer, uint32_t amount)
+
 Write n-bytes to the specified section at the specified offset
     
     writeToSection(uint32_t sectionID, uint32_t offset, uint32_t value) // Implemented

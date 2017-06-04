@@ -246,6 +246,33 @@ namespace RELPatch {
 			}
 		}
 
+		char* readData(uint32_t sourceSectionID, uint32_t sourceOffset, uint32_t amount) {
+			char *buffer = NULL;
+			if (validSection(sourceSectionID)) {
+				buffer = new char[amount];
+				readData(sourceSectionID, sourceOffset, buffer, amount);
+			}
+			return buffer;
+		}
+
+		void readData(uint32_t sourceSectionID, uint32_t sourceOffset, char *buffer, uint32_t amount) {
+			if (validSection(sourceSectionID)) {
+				int64_t signedAmount = (int64_t)amount;
+				relFile.seekg(toAddress(sectionInfoTable[sourceSectionID].offset, sourceOffset), std::fstream::beg);
+
+				relFile.read(buffer, (std::streamsize) amount);
+			}
+		}
+
+		void writeData(uint32_t destinationSectionID, uint32_t destinationOffset, char *buffer, uint32_t amount) {
+			if (validSection(destinationSectionID)) {
+				int64_t signedAmount = (int64_t)amount;
+				relFile.seekg(toAddress(sectionInfoTable[destinationSectionID].offset, destinationOffset), std::fstream::beg);
+
+				relFile.write(buffer, (std::streamsize) amount);
+			}
+		}
+
 		/*
 			Finds a list of relocation entries that point to <offset> within <sectionID>
 		*/
@@ -337,7 +364,7 @@ namespace RELPatch {
 			This is done by zeroing out the least significant bit (the executable bit) and adding the <offset>
 		*/
 		std::streamoff toAddress(uint32_t raw, uint32_t offset) {
-			return (std::streamoff) ((raw & (~1)) + offset);
+			return (std::streamoff) (int64_t)((raw & (~1)) + offset);
 		}
 
 		/*
